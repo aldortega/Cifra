@@ -49,7 +49,7 @@ def test_a_job_purged_while_processing_stays_expired(store: JobStore) -> None:
     job_id = new_job(store)
 
     class PurgingExtractor(FakeExtractor):
-        def extract(self, text):
+        def extract(self, text, on_progress=None):
             store.discard_content(job_id, "vencido")
             return super().extract(text)
 
@@ -57,3 +57,44 @@ def test_a_job_purged_while_processing_stays_expired(store: JobStore) -> None:
     record = store.load(job_id)
     assert record["estado"] == "vencido"
     assert record["texto"] is None
+
+
+class ProgressExtractor(FakeExtractor):
+    """Informa avance en tres fragmentos y registra el estado guardado en cada paso."""
+
+    def __init__(self, store: JobStore, job_id: str) -> None:
+        super().__init__({"Juan Pérez": "PERSONA"})
+        self.store, self.job_id, self.seen = store, job_id, []
+
+    def extract(self, text, on_progress=None):
+        for done in range(4):
+            on_progress(done, 3)
+            self.seen.append(self.store.load(self.job_id)["progreso"])
+        return super().extract(text)
+
+
+def test_progress_reports_real_stages_and_fragments(store: JobStore) -> None:
+    job_id = new_job(store)
+    extractor = ProgressExtractor(store, job_id)
+    process_job(store, job_id, extractor, sleep=lambda _s: None)
+    assert extractor.seen == [
+        {"etapa": "analizando", "hechos": 0, "total": 3},
+        {"etapa": "analizando", "hechos": 1, "total": 3},
+        {"etapa": "analizando", "hechos": 2, "total": 3},
+        {"etapa": "analizando", "hechos": 3, "total": 3},
+    ]
+    record = store.load(job_id)
+    assert record["estado"] == "en_revision"
+    assert record["progreso"] is None
+
+
+def test_the_api_exposes_progress_while_processing(client: TestClient, store: JobStore) -> None:
+    job_id = new_job(store)
+    record = store.load(job_id)
+    record["progreso"] = {"etapa": "analizando", "hechos": 2, "total": 5}
+    store.save(job_id, record)
+    assert client.get(f"/jobs/{job_id}").json()["progreso"] == {
+        "etapa": "analizando",
+        "hechos": 2,
+        "total": 5,
+    }

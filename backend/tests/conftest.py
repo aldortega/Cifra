@@ -19,7 +19,7 @@ class FakeExtractor:
         self.failures = failures
         self.calls = 0
 
-    def extract(self, text: str) -> list[Detection]:
+    def extract(self, text: str, on_progress=None) -> list[Detection]:
         self.calls += 1
         if self.calls <= self.failures:
             raise RuntimeError("Gemini no disponible")

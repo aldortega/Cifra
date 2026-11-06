@@ -4,15 +4,18 @@ from typing import Protocol
 from uuid import uuid4
 
 from app.anonymizer.markers import ALWAYS_ACTIVE, Detection
-from app.jobs.documents import RejectedDocumentError, extract_text
+from app.jobs.documents import RejectedDocumentError, extract_document
 from app.jobs.store import JobStore
 
 ATTEMPTS = 3
 BACKOFF_SECONDS = 2.0
 
 
+Progress = Callable[[int, int], None]
+
+
 class Extractor(Protocol):
-    def extract(self, text: str) -> list[Detection]: ...
+    def extract(self, text: str, on_progress: Progress | None = None) -> list[Detection]: ...
 
 
 def _to_records(detections: list[Detection], active: set[str], text_len: int) -> list[dict]:
@@ -53,16 +56,23 @@ def process_job(
     active = set(record["categorias"]) | ALWAYS_ACTIVE
     try:
         original = store.read_original(job_id, record["extension"])
-        text = extract_text(original, record["extension"])
+        text, layout = extract_document(original, record["extension"])
     except RejectedDocumentError as error:
-        record.update(estado="fallido", error=str(error))
+        record.update(estado="fallido", progreso=None, error=str(error))
         store.save(job_id, record)
         return
+
+    def report(done: int, total: int) -> None:
+        """Guarda el avance real (fragmentos analizados) salvo que el trabajo ya no siga vivo."""
+        if _is_gone(store, job_id):
+            return
+        record["progreso"] = {"etapa": "analizando", "hechos": done, "total": total}
+        store.save(job_id, record)
 
     last_error = ""
     for attempt in range(ATTEMPTS):
         try:
-            detections = extractor.extract(text)
+            detections = extractor.extract(text, on_progress=report)
         except Exception as error:
             last_error = str(error)
             if attempt < ATTEMPTS - 1:
@@ -72,8 +82,10 @@ def process_job(
             return
         record.update(
             estado="en_revision",
+            progreso=None,
             error=None,
             texto=text,
+            formato=layout,
             detecciones=_to_records(detections, active, len(text)),
         )
         store.save(job_id, record)
@@ -82,6 +94,7 @@ def process_job(
         return
     record.update(
         estado="fallido",
+        progreso=None,
         error=f"No se pudo analizar el documento tras {ATTEMPTS} intentos: {last_error}",
     )
     store.save(job_id, record)

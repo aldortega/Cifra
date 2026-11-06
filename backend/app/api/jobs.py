@@ -57,7 +57,16 @@ class ExportIn(BaseModel):
 def _public(record: dict[str, Any]) -> dict[str, Any]:
     return {
         key: record.get(key)
-        for key in ("id", "nombreArchivo", "estado", "error", "texto", "detecciones")
+        for key in (
+            "id",
+            "nombreArchivo",
+            "estado",
+            "progreso",
+            "error",
+            "texto",
+            "formato",
+            "detecciones",
+        )
     }
 
 
@@ -98,7 +107,7 @@ async def retry_job(
     record = store.load(job_id)
     if record is None or record["estado"] != "fallido":
         raise HTTPException(status_code=409, detail="Solo se pueden reintentar trabajos fallidos.")
-    record.update(estado="procesando", error=None)
+    record.update(estado="procesando", progreso=None, error=None)
     store.save(job_id, record)
     await enqueue(job_id)
     return {"id": job_id}

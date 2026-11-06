@@ -38,11 +38,80 @@ export type Deteccion = {
   estado: EstadoDeteccion;
 };
 
+/** Avance real del análisis: fragmentos del documento ya analizados sobre el total. */
+export type Progreso = { etapa: "analizando"; hechos: number; total: number };
+
 export type Trabajo = {
   id: string;
   nombreArchivo: string;
   estado: EstadoTrabajo;
+  progreso?: Progreso | null;
   error?: string;
   texto?: string;
+  /** Estructura visual del documento, con posiciones sobre `texto`. */
+  formato?: Formato | null;
   detecciones?: Deteccion[];
 };
+
+export type Alineacion = "izquierda" | "centro" | "derecha" | "justificado";
+
+/** Estilo de un tramo de texto. `tamano` en puntos. */
+export type Estilo = {
+  inicio: number;
+  fin: number;
+  negrita: boolean;
+  cursiva: boolean;
+  subrayado: boolean;
+  tamano: number;
+  fuente: string;
+  familia: "serif" | "sans" | "mono";
+};
+
+/** Línea de un PDF con su caja en puntos, desde la esquina superior izquierda de la página. */
+export type LineaPdf = {
+  inicio: number;
+  fin: number;
+  pagina: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  alineacion: Alineacion;
+};
+
+export type FormatoPdf = {
+  tipo: "pdf";
+  paginas: { ancho: number; alto: number }[];
+  lineas: LineaPdf[];
+  estilos: Estilo[];
+};
+
+/** Párrafo de un DOCX. Medidas en puntos; `interlineado` es un line-height de CSS. */
+export type ParrafoDocx = {
+  inicio: number;
+  fin: number;
+  seccion: "cuerpo" | "encabezado" | "pie" | "notas";
+  alineacion: Alineacion;
+  sangria: number;
+  sangriaDerecha: number;
+  primeraLinea: number;
+  espacioAntes: number;
+  interlineado: number;
+  celda: { tabla: number; fila: number; columna: number } | null;
+};
+
+export type FormatoDocx = {
+  tipo: "docx";
+  pagina: {
+    ancho: number;
+    alto: number;
+    margenIzquierdo: number;
+    margenDerecho: number;
+    margenSuperior: number;
+    margenInferior: number;
+  };
+  parrafos: ParrafoDocx[];
+  estilos: Estilo[];
+};
+
+export type Formato = FormatoPdf | FormatoDocx;

@@ -160,3 +160,12 @@ def test_export_fails_if_the_client_skips_stored_detections(client: TestClient) 
     res = client.post(f"/jobs/{job_id}/export", json={"detecciones": partial})
     assert res.status_code == 409
     assert "sin revisar" in res.json()["detail"]
+
+
+def test_job_in_review_includes_layout_matching_the_text(client: TestClient) -> None:
+    res = upload(client, "caso.docx", docx_bytes("El actor Juan Pérez.", "Vive en Mitre 450."))
+    job = client.get(f"/jobs/{res.json()['id']}").json()
+    formato = job["formato"]
+    assert formato["tipo"] == "docx"
+    parrafos = [job["texto"][p["inicio"] : p["fin"]] for p in formato["parrafos"]]
+    assert parrafos == ["El actor Juan Pérez.", "Vive en Mitre 450."]

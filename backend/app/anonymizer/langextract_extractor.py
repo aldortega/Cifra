@@ -1,7 +1,14 @@
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import langextract as lx
 
 from app.anonymizer.alignment import align_extractions
+from app.anonymizer.fragments import split_into_fragments
 from app.anonymizer.markers import Detection
+
+FRAGMENT_CHARS = 1500
+MAX_PARALLEL = 8
 
 CATEGORIES = [
     "PERSONA", "DNI", "DOMICILIO", "TELEFONO", "EMAIL", "FECHA_NACIMIENTO",
@@ -74,14 +81,40 @@ class LangExtractExtractor:
         self.api_key = api_key
         self.model_id = model_id
 
-    def extract(self, text: str) -> list[Detection]:
+    def _extract_fragment(self, fragment: str) -> list[tuple[str, str]]:
         result = lx.extract(
-            text_or_documents=text,
+            text_or_documents=fragment,
             prompt_description=PROMPT,
             examples=EXAMPLES,
             model_id=self.model_id,
             api_key=self.api_key,
+            # Un fragmento = una llamada: el avance se cuenta por fragmentos terminados.
+            max_char_buffer=FRAGMENT_CHARS,
+            show_progress=False,
             language_model_params={"http_options": {"api_version": "v1beta"}},
         )
-        pairs = [(e.extraction_class, e.extraction_text) for e in result.extractions]
+        return [(e.extraction_class, e.extraction_text) for e in result.extractions]
+
+    def extract(
+        self, text: str, on_progress: Callable[[int, int], None] | None = None
+    ) -> list[Detection]:
+        """Analiza los fragmentos en paralelo e informa cuántos terminaron.
+
+        Si un fragmento falla, falla todo el análisis (el procesamiento lo reintenta entero).
+        """
+        fragments = split_into_fragments(text, FRAGMENT_CHARS)
+        report = on_progress or (lambda _done, _total: None)
+        report(0, len(fragments))
+        pairs: list[tuple[str, str]] = []
+        with ThreadPoolExecutor(max_workers=MAX_PARALLEL) as pool:
+            pending = [pool.submit(self._extract_fragment, f) for f in fragments]
+            try:
+                for done, future in enumerate(as_completed(pending), start=1):
+                    pairs += future.result()
+                    report(done, len(fragments))
+            except BaseException:
+                for future in pending:
+                    future.cancel()
+                raise
+        # Las posiciones se calculan sobre el texto completo, no sobre cada fragmento.
         return align_extractions(text, pairs)

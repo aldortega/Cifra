@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 JOB_ID = re.compile(r"^[A-Za-z0-9_-]{16,64}$")
-CONTENT_FIELDS = ("texto", "detecciones")
+CONTENT_FIELDS = ("texto", "formato", "detecciones")
 
 
 class JobStore:
@@ -35,6 +35,7 @@ class JobStore:
                 "creado": datetime.now(UTC).isoformat(),
                 "error": None,
                 "texto": None,
+                "formato": None,
                 "detecciones": None,
             },
         )
@@ -61,7 +62,7 @@ class JobStore:
         return (folder / f"original{extension}").read_bytes()
 
     def discard_content(self, job_id: str, estado: str) -> None:
-        """Borra original, texto y detecciones; conserva solo metadatos y el nuevo estado."""
+        """Borra original, texto, formato y detecciones; conserva metadatos y el nuevo estado."""
         record = self.load(job_id)
         folder = self._dir(job_id)
         if record is None or folder is None:
@@ -71,7 +72,7 @@ class JobStore:
         counts: dict[str, int] = {}
         for det in record.get("detecciones") or []:
             counts[det["categoria"]] = counts.get(det["categoria"], 0) + 1
-        record.update(estado=estado, texto=None, detecciones=None, conteo=counts)
+        record.update(estado=estado, texto=None, formato=None, detecciones=None, conteo=counts)
         self.save(job_id, record)
 
     def job_ids(self) -> list[str]:
