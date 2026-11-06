@@ -1,6 +1,18 @@
 import pymupdf
 
-from app.anonymizer.export_docx import LeakError
+from app.anonymizer.leak import assert_no_leak
+
+FONT = "helv"
+MAX_FONT_SIZE = 9.0
+MIN_FONT_SIZE = 4.0
+
+
+def _font_size_for(marker: str, rect: pymupdf.Rect) -> float:
+    """Tamaño que entra en el recuadro, reduciendo la fuente hasta un mínimo legible."""
+    size = min(MAX_FONT_SIZE, max(rect.height * 0.8, MIN_FONT_SIZE))
+    while size > MIN_FONT_SIZE and pymupdf.get_text_length(marker, FONT, size) > rect.width:
+        size -= 0.5
+    return size
 
 
 def export_pdf(data: bytes, replacements: dict[str, str]) -> bytes:
@@ -9,12 +21,16 @@ def export_pdf(data: bytes, replacements: dict[str, str]) -> bytes:
     for page in doc:
         for original, marker in ordered:
             for rect in page.search_for(original):
-                page.add_redact_annot(rect, text=marker, fontsize=9, fill=(1, 1, 1))
+                page.add_redact_annot(
+                    rect,
+                    text=marker,
+                    fontname=FONT,
+                    fontsize=_font_size_for(marker, rect),
+                    fill=(1, 1, 1),
+                )
         page.apply_redactions()
     doc.set_metadata({})
     doc.del_xml_metadata()
     out = doc.tobytes(garbage=4, deflate=True, clean=True)
-    remaining = "".join(page.get_text() for page in pymupdf.open(stream=out))
-    if any(original in remaining for original in replacements):
-        raise LeakError("Quedan valores confirmados en el documento exportado")
+    assert_no_leak("\n".join(page.get_text() for page in pymupdf.open(stream=out)), replacements)
     return out

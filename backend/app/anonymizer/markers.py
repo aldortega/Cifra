@@ -3,6 +3,11 @@ import unicodedata
 from dataclasses import dataclass
 
 ALWAYS_ACTIVE = frozenset({"MENOR"})
+DEFAULT_ACTIVE = frozenset(
+    {"PERSONA", "DNI", "DOMICILIO", "TELEFONO", "EMAIL", "FECHA_NACIMIENTO", "MATRICULA", "CBU"}
+    | {"SALUD"}
+    | ALWAYS_ACTIVE
+)
 
 
 @dataclass(frozen=True)
@@ -24,20 +29,41 @@ def normalize(value: str) -> str:
     return re.sub(r"[\W_]+", " ", base.casefold()).strip()
 
 
-def anonymize(text: str, detections: list[Detection], active: set[str]) -> Anonymized:
+def _plan(
+    text: str, detections: list[Detection], active: set[str] | frozenset[str]
+) -> list[tuple[int, int, str]]:
+    """Tramos a reemplazar con su marcador. Las detecciones solapadas descartan a la posterior."""
+    enabled = set(active) | ALWAYS_ACTIVE
     numbers: dict[tuple[str, str], int] = {}
     counters: dict[str, int] = {}
-    replacements: list[tuple[int, int, str]] = []
-    enabled = active | ALWAYS_ACTIVE
-    for det in sorted(detections, key=lambda d: d.start):
-        if det.category not in enabled:
+    plan: list[tuple[int, int, str]] = []
+    cursor = 0
+    for det in sorted(detections, key=lambda d: (d.start, -d.end)):
+        if det.category not in enabled or det.start < cursor or det.end <= det.start:
             continue
         key = (det.category, normalize(text[det.start : det.end]))
         if key not in numbers:
             counters[det.category] = counters.get(det.category, 0) + 1
             numbers[key] = counters[det.category]
-        replacements.append((det.start, det.end, f"[{det.category} {numbers[key]}]"))
+        plan.append((det.start, det.end, f"[{det.category} {numbers[key]}]"))
+        cursor = det.end
+    return plan
+
+
+def anonymize(
+    text: str, detections: list[Detection], active: set[str] | frozenset[str] = DEFAULT_ACTIVE
+) -> Anonymized:
     out = text
-    for start, end, marker in reversed(replacements):
+    for start, end, marker in reversed(_plan(text, detections, active)):
         out = out[:start] + marker + out[end:]
     return Anonymized(out)
+
+
+def build_replacements(
+    text: str, detections: list[Detection], active: set[str] | frozenset[str] = DEFAULT_ACTIVE
+) -> dict[str, str]:
+    """Valor literal -> marcador, para aplicar sobre el archivo original."""
+    replacements: dict[str, str] = {}
+    for start, end, marker in _plan(text, detections, active):
+        replacements.setdefault(text[start:end], marker)
+    return replacements
