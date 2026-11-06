@@ -1,9 +1,11 @@
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
 from app.anonymizer.markers import Detection
+from app.anonymizer.replacement import value_pattern
 
 
 class Extractor(Protocol):
@@ -26,11 +28,8 @@ def load_cases(directory: Path) -> list[Case]:
 
 
 def _occurrences(text: str, value: str) -> list[tuple[int, int]]:
-    spans, start = [], 0
-    while (i := text.find(value, start)) >= 0:
-        spans.append((i, i + len(value)))
-        start = i + len(value)
-    return spans
+    """Apariciones del valor como palabra completa, con el mismo criterio que el reemplazo."""
+    return [m.span() for m in re.finditer(value_pattern(value), text)]
 
 
 def _is_covered(case: Case, detections: list[Detection], category: str, value: str) -> bool:

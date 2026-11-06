@@ -75,3 +75,10 @@ def test_every_occurrence_of_the_value_must_be_covered() -> None:
     case = Case(text=text, expected=[("PERSONA", "Ana Paz")])
     extractor = SpanExtractor([("PERSONA", 0, 7)])
     assert recall_by_category(extractor, [case]) == {"PERSONA": 0.0}
+
+
+def test_occurrences_inside_other_numbers_do_not_count() -> None:
+    text = "M.P. N° 876 y CUIL 27-27987654-1"
+    case = Case(text=text, expected=[("MATRICULA_PROFESIONAL", "876")])
+    extractor = SpanExtractor([("MATRICULA_PROFESIONAL", 8, 11)])
+    assert recall_by_category(extractor, [case]) == {"MATRICULA_PROFESIONAL": 1.0}

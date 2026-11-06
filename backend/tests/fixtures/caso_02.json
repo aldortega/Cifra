@@ -144,6 +144,26 @@
     {
       "category": "SALUD",
       "value": "esguince cervical grado II"
+    },
+    {
+      "category": "MATRICULA_PROFESIONAL",
+      "value": "1.234"
+    },
+    {
+      "category": "MATRICULA_PROFESIONAL",
+      "value": "876"
+    },
+    {
+      "category": "MATRICULA_PROFESIONAL",
+      "value": "2.045"
+    },
+    {
+      "category": "MATRICULA_PROFESIONAL",
+      "value": "3.310"
+    },
+    {
+      "category": "POLIZA",
+      "value": "0045-8873921"
     }
   ]
 }

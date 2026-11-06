@@ -17,7 +17,7 @@ Fragmento del documento que el sistema propone como dato sensible, con su catego
 _Avoid_: Entidad, extracción, hallazgo
 
 **Categoría**:
-Tipo de dato sensible. Al subir un documento se elige cuáles categorías se anonimizan (persona, DNI/CUIL/CUIT, domicilio, teléfono, email, fecha de nacimiento, matrícula, CBU, número de expediente, salud, menor).
+Tipo de dato sensible. Al subir un documento se elige cuáles categorías se anonimizan (persona, DNI/CUIL/CUIT, domicilio, teléfono, email, fecha de nacimiento, patente de vehículo, matrícula profesional, póliza de seguro, CBU, número de expediente, salud, menor).
 _Avoid_: Tipo, clase
 
 **Marcador**:

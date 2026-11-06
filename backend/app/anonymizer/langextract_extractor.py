@@ -5,7 +5,7 @@ from app.anonymizer.markers import Detection
 
 CATEGORIES = [
     "PERSONA", "DNI", "DOMICILIO", "TELEFONO", "EMAIL", "FECHA_NACIMIENTO",
-    "MATRICULA", "CBU", "EXPEDIENTE", "SALUD", "MENOR",
+    "MATRICULA", "MATRICULA_PROFESIONAL", "POLIZA", "CBU", "EXPEDIENTE", "SALUD", "MENOR",
 ]  # fmt: skip
 
 PROMPT = (
@@ -14,8 +14,10 @@ PROMPT = (
     + ", ".join(CATEGORIES)
     + ". DNI incluye CUIL y CUIT. Las personas menores de edad van en MENOR, no en PERSONA. "
     "No extraigas roles procesales como 'el actor' o 'la demandada'. "
-    "MATRICULA es el dominio o patente de un vehículo (p. ej. 'AB 123 CD' o 'AA123BB'), no la "
-    "matrícula profesional de abogados o peritos. Incluí las personas en la carátula, tanto en "
+    "MATRICULA es el dominio o patente de un vehículo (p. ej. 'AB 123 CD' o 'AA123BB'). "
+    "MATRICULA_PROFESIONAL es el número de matrícula de abogados, médicos o peritos (tras "
+    "'Matrícula N°', 'M.P. N°' o 'T° F°'), copiando solo el número. POLIZA es el número de una "
+    "póliza de seguro, copiando solo el número. Incluí las personas en la carátula, tanto en "
     "formato 'APELLIDO, Nombre' como en mayúsculas. Los números (DNI, CUIL, CUIT, teléfonos) se "
     "copian completos, con sus puntos y guiones."
 )
@@ -43,7 +45,9 @@ EXAMPLES = [
         text=(
             'Autos: "PAZ, MARCOS DANIEL c/ ROJAS, ELENA s/ DAÑOS Y PERJUICIOS". El actor circulaba '
             "con su Fiat Cronos, dominio AC 987 ZX, cuando fue embestido por el rodado dominio "
-            "AA123BB. Declaró la testigo Irma Funes, DNI 21.456.789, CUIL 27-21456789-3, "
+            "AA123BB, asegurado en la póliza N° 7781-002345. Por la actora, el Dr. Hugo Lezcano, "
+            "Matrícula N° 4.512, y el perito médico Lic. Ana Ríos, M.P. N° 990. "
+            "Declaró la testigo Irma Funes, DNI 21.456.789, CUIL 27-21456789-3, "
             "domiciliada en calle Sarmiento N° 77, Barrio Norte, de la ciudad de Posadas."
         ),
         extractions=[
@@ -51,6 +55,11 @@ EXAMPLES = [
             lx.data.Extraction("PERSONA", "ROJAS, ELENA"),
             lx.data.Extraction("MATRICULA", "AC 987 ZX"),
             lx.data.Extraction("MATRICULA", "AA123BB"),
+            lx.data.Extraction("POLIZA", "7781-002345"),
+            lx.data.Extraction("PERSONA", "Hugo Lezcano"),
+            lx.data.Extraction("MATRICULA_PROFESIONAL", "4.512"),
+            lx.data.Extraction("PERSONA", "Ana Ríos"),
+            lx.data.Extraction("MATRICULA_PROFESIONAL", "990"),
             lx.data.Extraction("PERSONA", "Irma Funes"),
             lx.data.Extraction("DNI", "21.456.789"),
             lx.data.Extraction("DNI", "27-21456789-3"),

@@ -108,3 +108,7 @@ def test_replacements_give_every_variant_the_same_marker() -> None:
         "GÓMEZ, ROBERTO CARLOS": "[PERSONA 1]",
         "ROBERTO CARLOS GÓMEZ": "[PERSONA 1]",
     }
+
+
+def test_professional_license_and_policy_are_active_by_default() -> None:
+    assert {"MATRICULA_PROFESIONAL", "POLIZA"} <= DEFAULT_ACTIVE

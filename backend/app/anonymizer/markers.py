@@ -5,7 +5,7 @@ from dataclasses import dataclass
 ALWAYS_ACTIVE = frozenset({"MENOR"})
 DEFAULT_ACTIVE = frozenset(
     {"PERSONA", "DNI", "DOMICILIO", "TELEFONO", "EMAIL", "FECHA_NACIMIENTO", "MATRICULA", "CBU"}
-    | {"SALUD"}
+    | {"SALUD", "MATRICULA_PROFESIONAL", "POLIZA"}
     | ALWAYS_ACTIVE
 )
 
