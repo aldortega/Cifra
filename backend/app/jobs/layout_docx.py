@@ -171,6 +171,56 @@ def _cell(paragraph: etree._Element, tables: dict[etree._Element, int]) -> dict[
     }
 
 
+# Campos de Word que se completan al imprimir y que no forman parte del texto.
+FIELD_TYPES = {"PAGE": "pagina", "NUMPAGES": "paginas", "SECTIONPAGES": "paginas"}
+NOTE_TYPES = {"footnoteReference": "nota", "endnoteReference": "final"}
+
+
+def _inline_marks(
+    paragraph: etree._Element, own: set[etree._Element]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Campos de número de página y llamadas a notas del párrafo, con posiciones relativas.
+
+    Un campo con resultado guardado (p. ej. "1") ocupa ese texto; si no, mide cero.
+    """
+    fields: list[dict[str, Any]] = []
+    refs: list[dict[str, Any]] = []
+    offset = 0
+    stack: list[dict[str, Any]] = []  # campos complejos abiertos (begin … separate … end)
+    for el in paragraph.iter():
+        if el is paragraph or not isinstance(el.tag, str):
+            continue
+        if next(el.iterancestors(_w("p")), None) is not paragraph:
+            continue
+        tag = etree.QName(el).localname
+        if tag == "t" and el in own:
+            offset += len(el.text or "")
+        elif tag == "fldSimple":
+            words = (_attr(el, "instr") or "").split()
+            kind = FIELD_TYPES.get(words[0].upper()) if words else None
+            if kind:
+                length = sum(len(t.text or "") for t in el.iter(_w("t")) if t in own)
+                fields.append({"inicio": offset, "fin": offset + length, "tipo": kind})
+        elif tag == "fldChar":
+            char_type = _attr(el, "fldCharType")
+            if char_type == "begin":
+                stack.append({"instr": "", "start": None})
+            elif char_type == "separate" and stack:
+                stack[-1]["start"] = offset
+            elif char_type == "end" and stack:
+                field = stack.pop()
+                words = field["instr"].split()
+                kind = FIELD_TYPES.get(words[0].upper()) if words else None
+                if kind:
+                    start = offset if field["start"] is None else field["start"]
+                    fields.append({"inicio": start, "fin": offset, "tipo": kind})
+        elif tag == "instrText" and stack:
+            stack[-1]["instr"] += el.text or ""
+        elif tag in NOTE_TYPES:
+            refs.append({"posicion": offset, "tipo": NOTE_TYPES[tag], "id": _attr(el, "id")})
+    return fields, refs
+
+
 def docx_layout(data: bytes) -> tuple[str, dict[str, Any]]:
     """Devuelve el texto (idéntico a `docx_text`) y el formato de párrafos y tramos."""
     with zipfile.ZipFile(io.BytesIO(data)) as z:
@@ -187,6 +237,17 @@ def docx_layout(data: bytes) -> tuple[str, dict[str, Any]]:
     paragraphs: list[dict[str, Any]] = []
     spans: list[dict[str, Any]] = []
     tables: dict[etree._Element, int] = {}
+    fields: list[dict[str, Any]] = []
+    refs: list[dict[str, Any]] = []
+    # Número de cada nota (al pie y final, por separado), en orden de llamada.
+    numbers: dict[tuple[str, str | None], int] = {}
+    notes_started: set[tuple[str, str | None]] = set()
+
+    def number(kind: str, note_id: str | None) -> int:
+        key = (kind, note_id)
+        if key not in numbers:
+            numbers[key] = 1 + sum(1 for k in numbers if k[0] == kind)
+        return numbers[key]
 
     for part in parts:
         pending_space = 0.0  # pt de párrafos vacíos y espacio posterior del párrafo anterior
@@ -221,6 +282,21 @@ def docx_layout(data: bytes) -> tuple[str, dict[str, Any]]:
             if lines:
                 offset += 1  # el "\n" que separa párrafos en el texto
             start = offset
+            own_fields, own_refs = _inline_marks(paragraph, set(texts))
+            fields += [
+                {**f, "inicio": start + f["inicio"], "fin": start + f["fin"]} for f in own_fields
+            ]
+            refs += [
+                {**r, "posicion": start + r["posicion"], "numero": number(r["tipo"], r["id"])}
+                for r in own_refs
+            ]
+            note = None
+            holder = next(paragraph.iterancestors(_w("footnote"), _w("endnote")), None)
+            if holder is not None:
+                kind = "nota" if etree.QName(holder).localname == "footnote" else "final"
+                key = (kind, _attr(holder, "id"))
+                note = {"tipo": kind, "numero": number(*key), "primero": key not in notes_started}
+                notes_started.add(key)
             for t in texts:
                 if not t.text:
                     continue
@@ -266,6 +342,7 @@ def docx_layout(data: bytes) -> tuple[str, dict[str, Any]]:
                     "espacioAntes": round(pending_space + before, 2),
                     "interlineado": _line_height(ppr, base_size),
                     "celda": _cell(paragraph, tables),
+                    "nota": note,
                 }
             )
             pending_space = after
@@ -276,4 +353,6 @@ def docx_layout(data: bytes) -> tuple[str, dict[str, Any]]:
         "pagina": page,
         "parrafos": paragraphs,
         "estilos": spans,
+        "campos": fields,
+        "referencias": refs,
     }

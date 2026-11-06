@@ -9,6 +9,7 @@ from docx.shared import Pt
 from app.anonymizer.export_docx import docx_text
 from app.jobs.layout_docx import docx_layout
 from app.jobs.layout_pdf import pdf_layout
+from tests.helpers import docx_with_footnotes_and_page_field
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sentencia_ejemplo.docx"
 
@@ -126,3 +127,31 @@ def test_docx_run_styles() -> None:
 def test_docx_fixture_has_layout_for_every_paragraph() -> None:
     text, fmt = docx_layout(FIXTURE.read_bytes())
     assert covered(text, fmt["parrafos"]) == text.replace("\n", "")
+
+
+def test_docx_page_fields_and_footnotes() -> None:
+    data = docx_with_footnotes_and_page_field(
+        ["El actor Juan Pérez[^1] demanda.", "Segundo párrafo[^2]."],
+        {1: "Carta documento.", 2: "Ver fs. 12."},
+    )
+    text, fmt = docx_layout(data)
+    assert text == docx_text(data)
+    # El pie "Pág. <PAGE> de <NUMPAGES>" lleva los dos campos, sin texto propio.
+    pie = next(p for p in fmt["parrafos"] if p["seccion"] == "pie")
+    assert text[pie["inicio"] : pie["fin"]] == "Pág.  de "
+    assert [(c["tipo"], c["inicio"] - pie["inicio"]) for c in fmt["campos"]] == [
+        ("pagina", 5),
+        ("paginas", 9),
+    ]
+    # Cada llamada sabe su número y dónde va; cada nota, a qué número pertenece.
+    refs = [(text[: r["posicion"]].split("\n")[-1], r["numero"]) for r in fmt["referencias"]]
+    assert refs == [("El actor Juan Pérez", 1), ("Segundo párrafo", 2)]
+    notes = [
+        (text[p["inicio"] : p["fin"]].strip(), p["nota"])
+        for p in fmt["parrafos"]
+        if p["seccion"] == "notas"
+    ]
+    assert notes == [
+        ("Carta documento.", {"tipo": "nota", "numero": 1, "primero": True}),
+        ("Ver fs. 12.", {"tipo": "nota", "numero": 2, "primero": True}),
+    ]
