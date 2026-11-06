@@ -19,3 +19,23 @@ def align_extractions(text: str, extractions: list[tuple[str, str]]) -> list[Det
                 category, match.start(), match.end()
             )
     return sorted(detections.values(), key=lambda d: (d.start, d.end, d.category))
+
+
+_CARATULA_SEPARATOR = re.compile(r"\s+[cs]/\s+", re.IGNORECASE)
+_SURNAME_FIRST = re.compile(r"^[^\W\d][^,]*,\s*[^\W\d][^,]*$")
+
+
+def caratula_parties(extractions: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Personas 'APELLIDO, Nombre' de cada carátula extraída, por si el modelo no las separó.
+
+    Así los nombres siguen anonimizándose si la carátula se desactiva o se descarta.
+    El último tramo (tras 's/') es el objeto del juicio y no se considera.
+    """
+    parties = []
+    for category, value in extractions:
+        if category != "CARATULA":
+            continue
+        for part in _CARATULA_SEPARATOR.split(value.strip())[:-1]:
+            if _SURNAME_FIRST.match(part.strip()):
+                parties.append(("PERSONA", part.strip()))
+    return parties

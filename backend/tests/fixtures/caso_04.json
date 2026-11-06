@@ -1,0 +1,161 @@
+{
+  "text": "PODER JUDICIAL DE FORMOSA\nTRIBUNAL UNIPERSONAL EN LO PENAL - CIRCUNSCRIPCIÓN JUDICIAL I\nLegajo Nº: MPF-FSA-0345/2025 (Fiscalía de Cámara Nº 2)\nCausa: \"MONZÓN, Cristian Gabriel s/ Robo agravado por el uso de arma (art. 166 inc. 2 C.P.) - Dam. VERA, Eliana Beatriz\"\nFecha: Formosa, 30 de octubre de 2025\nSENTENCIA Nº 58\nI. IMPUTADO\nCristian Gabriel MONZÓN, alias \"el Cuervo\", DNI 38.245.119, argentino, soltero, de 29 años de edad, nacido el 19 de julio de 1996 en Clorinda, hijo de Ramón Ernesto Monzón y de Teresa Del Carmen Giménez, de ocupación albañil, con último domicilio en Barrio Villa Hermosa, calle Los Ceibos s/n (a metros del Club Social y Deportivo \"Defensores\"), Formosa. Prontuario policial Nº 77.481-FM. Registra una condena anterior de dos años de prisión en suspenso por hurto simple, dictada por el Juzgado Correccional Nº 1 el 11/05/2021 (Expte. 903/20), y estuvo alojado en la Unidad Penal Nº 1 hasta el 14/02/2024. Su defensa estuvo a cargo del Dr. Walter Hugo Sandoval, Defensor Oficial (tel. 3704-40-2100 int. 25).\nII. HECHO\nSe le atribuye haber ingresado el día 22 de diciembre de 2024, a las 21:10 horas aproximadamente, al comercio \"Kiosco y Despensa La Esquina\", ubicado en calle España Nº 1.389 esquina Sarmiento, de esta ciudad, y, mostrando un arma de fuego tipo revólver calibre .32 (luego secuestrada), haber exigido a la encargada, Sra. Eliana Beatriz VERA, DNI 36.109.842, la entrega del dinero de la caja, apoderándose de la suma de $385.000 y de un teléfono celular marca Samsung Galaxy A14, IMEI 352099111234567, línea 3704-71-5588, de su propiedad. Luego se dio a la fuga a bordo de una motocicleta Honda Wave 110 cc, dominio 345-ABC, que se encontraba a cargo de un tercero aún no identificado.\nIII. PRUEBA\na) Declaración de la víctima: la Sra. Vera, de 34 años, domiciliada en Pasaje 9 de Julio Nº 218, Barrio San Antonio, manifestó que reconoció al acusado \"por la voz y por un tatuaje con forma de ancla en el antebrazo izquierdo\", y que a raíz del hecho padece insomnio y recibe asistencia psicológica en el consultorio de la Lic. Débora Natalia Pereyra. Aportó su correo electrónico eliana.vera.88@hotmail.com para notificaciones.\nb) Testimonial del Sr. Oscar Alberto Benítez, DNI 22.673.904, jubilado, vecino del local (domicilio: España 1.401), quien vio salir corriendo a un hombre joven con campera oscura y capucha, y anotó mentalmente la patente de la moto, que dictó luego a la policía.\nc) Acta de procedimiento del Oficial Inspector Marcelo Fabián Duarte (Legajo 44.870, Comisaría Seccional Segunda), quien el 23/12/2024 allanó la vivienda del imputado con orden del Juez de Garantías, Dr. Horacio Ismael Lezcano, y secuestró un revólver Taurus calibre .32 (serie 1A456789), dos municiones y el teléfono robado, hallado dentro de una mochila celeste.\nd) Informe de cámaras de seguridad del Centro de Monitoreo Municipal (operador: Sr. Leandro Matías Cabrera) y pericia dactiloscópica de la Lic. Norma Alicia Escobar (M.P. 1.205) que detectó una huella del dedo índice derecho del acusado sobre el mostrador del comercio.\ne) Reconocimiento en rueda de personas del 03/01/2025 (acta Nº 12/25), con resultado positivo.\nIV. CONSIDERACIONES\nEl Tribunal, a cargo del Dr. Esteban Rodolfo Maidana, tiene por acreditada la materialidad del hecho y la autoría responsable de Cristian Gabriel Monzón. La declaración de la víctima fue coherente, sostenida en el tiempo y corroborada por la testimonial de Benítez, el secuestro del celular de la Sra. Vera en poder del imputado y la huella hallada en el lugar. La defensa planteó la nulidad del allanamiento, que fue rechazada por entenderse que la orden fue debidamente fundada. Como agravante se valora el uso de arma de fuego y la reincidencia, y como atenuante el trabajo estable y la buena conducta posterior al hecho.\nV. RESUELVE\n1°) CONDENAR a Cristian Gabriel MONZÓN, de condiciones personales ya referidas, como autor penalmente responsable del delito de robo agravado por el uso de arma de fuego (art. 166 inc. 2 primer párrafo del C.P.), a la pena de SEIS (6) AÑOS DE PRISIÓN, accesorias legales y costas.\n2°) DISPONER el decomiso del arma secuestrada y la restitución a la damnificada de su teléfono celular, previa pericia.\n3°) REGULAR los honorarios del Dr. Walter Hugo Sandoval en la suma de $1.100.000.\n4°) Notifíquese a la víctima, Sra. Vera, conforme ley 27.372, y comuníquese al Registro Nacional de Reincidencia.\nDr. Esteban Rodolfo Maidana\nJuez Penal\nSecretaría: Dra. Gladys Noemí Franco\nNota: Documento ficticio generado solo con fines de prueba. Nombres, DNI, IMEI, patentes, prontuarios, domicilios, teléfonos, correos y expedientes son inventados.",
+  "expected": [
+    {
+      "category": "PERSONA",
+      "value": "MONZÓN, Cristian Gabriel"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Cristian Gabriel MONZÓN"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Cristian Gabriel Monzón"
+    },
+    {
+      "category": "PERSONA",
+      "value": "el Cuervo"
+    },
+    {
+      "category": "PERSONA",
+      "value": "VERA, Eliana Beatriz"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Eliana Beatriz VERA"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Ramón Ernesto Monzón"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Teresa Del Carmen Giménez"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Walter Hugo Sandoval"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Débora Natalia Pereyra"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Oscar Alberto Benítez"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Marcelo Fabián Duarte"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Horacio Ismael Lezcano"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Leandro Matías Cabrera"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Norma Alicia Escobar"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Esteban Rodolfo Maidana"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Gladys Noemí Franco"
+    },
+    {
+      "category": "DNI",
+      "value": "38.245.119"
+    },
+    {
+      "category": "DNI",
+      "value": "36.109.842"
+    },
+    {
+      "category": "DNI",
+      "value": "22.673.904"
+    },
+    {
+      "category": "FECHA",
+      "value": "19 de julio de 1996"
+    },
+    {
+      "category": "DOMICILIO",
+      "value": "Barrio Villa Hermosa, calle Los Ceibos s/n"
+    },
+    {
+      "category": "DOMICILIO",
+      "value": "Pasaje 9 de Julio Nº 218, Barrio San Antonio"
+    },
+    {
+      "category": "DOMICILIO",
+      "value": "España 1.401"
+    },
+    {
+      "category": "TELEFONO",
+      "value": "3704-40-2100"
+    },
+    {
+      "category": "TELEFONO",
+      "value": "3704-71-5588"
+    },
+    {
+      "category": "EMAIL",
+      "value": "eliana.vera.88@hotmail.com"
+    },
+    {
+      "category": "MATRICULA",
+      "value": "345-ABC"
+    },
+    {
+      "category": "MATRICULA_PROFESIONAL",
+      "value": "1.205"
+    },
+    {
+      "category": "EXPEDIENTE",
+      "value": "MPF-FSA-0345/2025"
+    },
+    {
+      "category": "EXPEDIENTE",
+      "value": "903/20"
+    },
+    {
+      "category": "SALUD",
+      "value": "insomnio"
+    },
+    {
+      "category": "FECHA",
+      "value": "30 de octubre de 2025"
+    },
+    {
+      "category": "FECHA",
+      "value": "11/05/2021"
+    },
+    {
+      "category": "FECHA",
+      "value": "14/02/2024"
+    },
+    {
+      "category": "FECHA",
+      "value": "22 de diciembre de 2024"
+    },
+    {
+      "category": "FECHA",
+      "value": "23/12/2024"
+    },
+    {
+      "category": "FECHA",
+      "value": "03/01/2025"
+    },
+    {
+      "category": "CARATULA",
+      "value": "MONZÓN, Cristian Gabriel s/ Robo agravado por el uso de arma (art. 166 inc. 2 C.P.) - Dam. VERA, Eliana Beatriz"
+    }
+  ]
+}

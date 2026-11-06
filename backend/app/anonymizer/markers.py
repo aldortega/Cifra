@@ -3,9 +3,10 @@ import unicodedata
 from dataclasses import dataclass
 
 ALWAYS_ACTIVE = frozenset({"MENOR"})
+# Todas las categorías vienen activas; el usuario desactiva las que no quiera.
 DEFAULT_ACTIVE = frozenset(
-    {"PERSONA", "DNI", "DOMICILIO", "TELEFONO", "EMAIL", "FECHA_NACIMIENTO", "MATRICULA", "CBU"}
-    | {"SALUD", "MATRICULA_PROFESIONAL", "POLIZA"}
+    {"PERSONA", "DNI", "DOMICILIO", "TELEFONO", "EMAIL", "FECHA"}
+    | {"MATRICULA", "MATRICULA_PROFESIONAL", "POLIZA", "CBU", "EXPEDIENTE", "CARATULA", "SALUD"}
     | ALWAYS_ACTIVE
 )
 

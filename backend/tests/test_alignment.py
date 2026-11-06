@@ -1,4 +1,4 @@
-from app.anonymizer.alignment import align_extractions
+from app.anonymizer.alignment import align_extractions, caratula_parties
 from app.anonymizer.markers import Detection
 
 
@@ -26,3 +26,16 @@ def test_duplicated_pairs_do_not_duplicate_detections() -> None:
     text = "Ana Paz"
     found = align_extractions(text, [("PERSONA", "Ana Paz"), ("PERSONA", "Ana Paz")])
     assert len(found) == 1
+
+
+def test_caratula_parties_extracts_surname_first_names_only() -> None:
+    extractions = [
+        ("CARATULA", "RAMÍREZ, Silvia Noemí c/ ACOSTA, Jorge Luis s/ ALIMENTOS"),
+        ("CARATULA", "DÍAZ, Marcelo c/ SUPERMERCADOS DEL NORTE S.A. s/ Despido"),
+        ("PERSONA", "Ana Ríos"),
+    ]
+    assert caratula_parties(extractions) == [
+        ("PERSONA", "RAMÍREZ, Silvia Noemí"),
+        ("PERSONA", "ACOSTA, Jorge Luis"),
+        ("PERSONA", "DÍAZ, Marcelo"),
+    ]

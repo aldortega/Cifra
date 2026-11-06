@@ -1,3 +1,4 @@
+from app.anonymizer.langextract_extractor import CATEGORIES
 from app.anonymizer.markers import DEFAULT_ACTIVE, Detection, anonymize, build_replacements
 
 
@@ -45,9 +46,8 @@ def test_overlapping_detections_keep_the_earlier_and_drop_the_rest() -> None:
     assert result.text == "[PERSONA 1] vive aquí"
 
 
-def test_default_categories_exclude_expediente_only() -> None:
-    assert "EXPEDIENTE" not in DEFAULT_ACTIVE
-    assert {"PERSONA", "DNI", "DOMICILIO", "TELEFONO", "MENOR"} <= DEFAULT_ACTIVE
+def test_every_category_is_active_by_default() -> None:
+    assert set(CATEGORIES) == DEFAULT_ACTIVE
 
 
 def test_replacements_map_each_literal_value_to_its_marker() -> None:
@@ -110,5 +110,15 @@ def test_replacements_give_every_variant_the_same_marker() -> None:
     }
 
 
-def test_professional_license_and_policy_are_active_by_default() -> None:
-    assert {"MATRICULA_PROFESIONAL", "POLIZA"} <= DEFAULT_ACTIVE
+def test_active_caratula_covers_the_names_it_contains() -> None:
+    text = 'Autos "PAZ, Ana c/ ROJAS, Eva s/ daños". PAZ, Ana declaró.'
+    dets = [
+        Detection("CARATULA", 7, 38),
+        Detection("PERSONA", 7, 15),
+        Detection("PERSONA", 19, 29),
+        Detection("PERSONA", 41, 49),
+    ]
+    both = anonymize(text, dets, active={"CARATULA", "PERSONA"})
+    assert both.text == 'Autos "[CARATULA 1]". [PERSONA 1] declaró.'
+    names_only = anonymize(text, dets, active={"PERSONA"})
+    assert names_only.text == 'Autos "[PERSONA 1] c/ [PERSONA 2] s/ daños". [PERSONA 1] declaró.'

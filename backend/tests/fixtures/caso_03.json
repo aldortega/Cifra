@@ -1,0 +1,129 @@
+{
+  "text": "PODER JUDICIAL DE LA PROVINCIA DE FORMOSA\nJUZGADO LABORAL Nº 1 - FORMOSA\nExpte. Nº 1675/2024 - \"DÍAZ, Marcelo Ariel c/ SUPERMERCADOS DEL NORTE S.A. s/ Despido e indemnizaciones laborales\"\nFormosa, 4 de noviembre de 2025.\nSENTENCIA DEFINITIVA Nº 164\nI. ANTECEDENTES\nSe presenta el Sr. Marcelo Ariel DÍAZ, DNI 27.341.508, CUIL 20-27341508-6, de 38 años, casado con la Sra. Karina Soledad Paz y padre de dos hijos, con domicilio en calle Mansilla 1.240, Barrio Nueva Formosa, patrocinado por el Dr. Gustavo Adrián Peralta (Mat. 987, tel. 3704-15-334455), y demanda a SUPERMERCADOS DEL NORTE S.A., CUIT 30-68901234-5, con sede social en Ruta Nacional 11 km 1.321, representada por su apoderado, Dr. Fernando Javier Cuevas. Relata que ingresó a trabajar el 1° de agosto de 2013 como repositor y fue promovido a encargado de depósito de la sucursal Nº 3, y que el 17 de julio de 2024 fue despedido sin causa mediante carta documento CD 987654321 AR. Intimó el pago de las indemnizaciones por telegrama TCL 456123789 del 19/07/2024, sin obtener respuesta.\nLa demandada contesta demanda negando la existencia de despido sin causa, y sostiene que el actor incurrió en reiteradas inasistencias injustificadas y en un faltante de mercadería por $ 640.000, lo que fue constatado por el Gerente de Recursos Humanos, Sr. Pablo Ezequiel Lugo (DNI 30.118.442), y por la jefa de sucursal, Sra. Rosa Elena Villalba.\nII. PRUEBA Y HECHOS PROBADOS\nDe la testimonial de los Sres. Nicolás Emanuel Ayala (compañero de trabajo, DNI 35.220.711) y Mirta Beatriz Cardozo (ex cajera, domiciliada en Barrio Villa del Carmen, Mza. 8 Casa 12) surge que el actor cumplía sus funciones habitualmente y que las faltas atribuidas eran justificadas con certificados médicos, ya que el Sr. Díaz padece diabetes tipo 2 y fue intervenido quirúrgicamente de una hernia discal en mayo de 2024 por el Dr. Ricardo Aníbal Sosa (Clínica del Norte). Asimismo, el actor está afiliado al Sindicato de Empleados de Comercio de Formosa (Afiliado Nº 20.884) y fue delegado gremial entre 2019 y 2022.\nLa pericia contable, a cargo de la CPN Valeria Inés Rojas (Mat. CPCE 2.371), determinó que la mejor remuneración mensual, normal y habitual del actor fue de $ 1.480.000 y que se adeudan diferencias salariales. El cuadro de rubros resulta el siguiente:\nRubro\nBase de cálculo\nImporte\nIndemnización por antigüedad (art. 245 LCT) - 11 años\n$ 1.480.000 x 11\n$ 16.280.000\nPreaviso (2 meses) e integración mes de despido\n$ 1.480.000 x 2,5\n$ 3.700.000\nSAC proporcional 2º semestre 2024\n$ 1.480.000 / 12 x 6\n$ 740.000\nVacaciones no gozadas (proporcional)\n$ 1.480.000 / 25 x 18\n$ 1.065.600\nDiferencias salariales (Convenio 130/75)\ns/ pericia contable\n$ 2.310.450\nTOTAL\n$ 24.096.050\nIII. CONSIDERANDO\nLa demandada no probó la causa del despido ni cumplió con la carga de acreditar el faltante, por lo que el despido resulta incausado y corresponde admitir los rubros indemnizatorios. Se rechaza el planteo de daño moral por no haberse acreditado un perjuicio autónomo. La tasa de interés será la activa del Banco de la Nación Argentina.\nIV. RESUELVO\n1°) HACER LUGAR parcialmente a la demanda de Marcelo Ariel DÍAZ contra SUPERMERCADOS DEL NORTE S.A. y condenarla a pagar la suma de PESOS VEINTICUATRO MILLONES NOVENTA Y SEIS MIL CINCUENTA ($ 24.096.050) dentro de los diez días, con intereses. 2°) IMPONER las costas a la demandada. 3°) REGULAR los honorarios del Dr. Gustavo Adrián Peralta en $ 3.850.000, los del Dr. Fernando Javier Cuevas en $ 2.900.000 y los de la perito CPN Valeria Inés Rojas en $ 720.000. 4°) Regístrese y notifíquese.\nDra. Patricia Elena Sandoval\nJueza Laboral\nNota: Documento ficticio generado solo con fines de prueba. Todos los datos personales, números y expedientes son inventados.\nSecretaría: Dra. Liliana Mabel Ortiz - lortiz@poderjudicial-fake.gob.ar - Pág. \nCarta documento remitida por el empleador desde la sucursal de Correo Argentino de calle Uriburu 650, Formosa, con firma de la Sra. Rosa Elena Villalba, el 17/07/2024.\nExpte. 1675/2024 - DÍAZ, Marcelo Ariel c/ SUPERMERCADOS DEL NORTE S.A.",
+  "expected": [
+    {
+      "category": "PERSONA",
+      "value": "DÍAZ, Marcelo Ariel"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Marcelo Ariel DÍAZ"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Karina Soledad Paz"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Gustavo Adrián Peralta"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Fernando Javier Cuevas"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Pablo Ezequiel Lugo"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Rosa Elena Villalba"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Nicolás Emanuel Ayala"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Mirta Beatriz Cardozo"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Ricardo Aníbal Sosa"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Valeria Inés Rojas"
+    },
+    {
+      "category": "PERSONA",
+      "value": "Patricia Elena Sandoval"
+    },
+    {
+      "category": "DNI",
+      "value": "27.341.508"
+    },
+    {
+      "category": "DNI",
+      "value": "20-27341508-6"
+    },
+    {
+      "category": "DNI",
+      "value": "30.118.442"
+    },
+    {
+      "category": "DNI",
+      "value": "35.220.711"
+    },
+    {
+      "category": "DOMICILIO",
+      "value": "calle Mansilla 1.240, Barrio Nueva Formosa"
+    },
+    {
+      "category": "DOMICILIO",
+      "value": "Barrio Villa del Carmen, Mza. 8 Casa 12"
+    },
+    {
+      "category": "TELEFONO",
+      "value": "3704-15-334455"
+    },
+    {
+      "category": "MATRICULA_PROFESIONAL",
+      "value": "987"
+    },
+    {
+      "category": "MATRICULA_PROFESIONAL",
+      "value": "2.371"
+    },
+    {
+      "category": "EXPEDIENTE",
+      "value": "1675/2024"
+    },
+    {
+      "category": "SALUD",
+      "value": "diabetes tipo 2"
+    },
+    {
+      "category": "SALUD",
+      "value": "hernia discal"
+    },
+    {
+      "category": "FECHA",
+      "value": "4 de noviembre de 2025"
+    },
+    {
+      "category": "FECHA",
+      "value": "1° de agosto de 2013"
+    },
+    {
+      "category": "FECHA",
+      "value": "17 de julio de 2024"
+    },
+    {
+      "category": "FECHA",
+      "value": "19/07/2024"
+    },
+    {
+      "category": "FECHA",
+      "value": "mayo de 2024"
+    },
+    {
+      "category": "FECHA",
+      "value": "17/07/2024"
+    },
+    {
+      "category": "CARATULA",
+      "value": "DÍAZ, Marcelo Ariel c/ SUPERMERCADOS DEL NORTE S.A. s/ Despido e indemnizaciones laborales"
+    }
+  ]
+}
