@@ -8,7 +8,6 @@ import {
   CATEGORIAS,
   type Deteccion,
   type EstadoDeteccion,
-  type FormatoExportacion,
   type Trabajo,
   nombreCategoria,
 } from "@/lib/types";
@@ -29,7 +28,6 @@ export function ReviewView({ trabajo }: { trabajo: Trabajo }) {
   const [vistaPrevia, setVistaPrevia] = useState(false);
   const [manual, setManual] = useState<Seleccion | null>(null);
   const [categoriaManual, setCategoriaManual] = useState("PERSONA");
-  const [formato, setFormato] = useState<FormatoExportacion>("docx");
 
   const textoRef = useRef<HTMLElement>(null);
   const marcadores = useMemo(() => etiquetasDeMarcadores(texto, detecciones), [texto, detecciones]);
@@ -37,7 +35,7 @@ export function ReviewView({ trabajo }: { trabajo: Trabajo }) {
   const pendientes = detecciones.filter((d) => d.estado === "pendiente").length;
 
   const exportar = useMutation({
-    mutationFn: () => exportarTrabajo(trabajo.id, formato, detecciones),
+    mutationFn: () => exportarTrabajo(trabajo.id, detecciones),
   });
 
   /** Detecciones a las que se aplica una acción: iguales en categoría y valor, salvo "solo esta". */
@@ -257,17 +255,7 @@ export function ReviewView({ trabajo }: { trabajo: Trabajo }) {
             </Card.Description>
           </Card.Header>
           <Card.Content className="flex flex-col gap-3 text-sm">
-            <label className="flex flex-col gap-1">
-              Formato
-              <select
-                value={formato}
-                onChange={(e) => setFormato(e.target.value as FormatoExportacion)}
-                className="rounded-lg border border-separator bg-surface p-2"
-              >
-                <option value="docx">DOCX</option>
-                <option value="pdf">PDF</option>
-              </select>
-            </label>
+            <p className="text-muted">Se exporta en el mismo formato del documento original.</p>
             {exportar.isError && (
               <p role="alert" className="text-danger">
                 {exportar.error.message}

@@ -49,6 +49,7 @@ class LangExtractExtractor:
             examples=EXAMPLES,
             model_id=self.model_id,
             api_key=self.api_key,
+            language_model_params={"http_options": {"api_version": "v1beta"}},
         )
         detections = []
         for e in result.extractions:

@@ -1,9 +1,9 @@
 import { Button, Card } from "@heroui/react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 
 import { ReviewView } from "@/components/ReviewView";
-import { obtenerTrabajo } from "@/lib/jobs";
+import { obtenerTrabajo, reintentarTrabajo } from "@/lib/jobs";
 
 export function JobPage() {
   const { id = "" } = useParams();
@@ -14,6 +14,11 @@ export function JobPage() {
     refetchInterval: (query) =>
       query.state.data && ["subido", "procesando"].includes(query.state.data.estado) ? 1500 : false,
     refetchOnWindowFocus: false,
+  });
+
+  const reintentar = useMutation({
+    mutationFn: () => reintentarTrabajo(id),
+    onSuccess: () => trabajo.refetch(),
   });
 
   if (trabajo.isPending) return <Aviso titulo="Cargando…" />;
@@ -37,7 +42,14 @@ export function JobPage() {
     case "en_revision":
       return <ReviewView trabajo={t} />;
     case "fallido":
-      return <Aviso titulo="El procesamiento falló" detalle={t.error} volver />;
+      return (
+        <Aviso
+          titulo="El procesamiento falló"
+          detalle={t.error}
+          volver
+          reintentar={() => reintentar.mutate()}
+        />
+      );
     case "exportado":
       return <Aviso titulo="Documento exportado" detalle="El original ya fue eliminado." volver />;
     case "vencido":
@@ -51,7 +63,13 @@ export function JobPage() {
   }
 }
 
-function Aviso(props: { titulo: string; detalle?: string; cargando?: boolean; volver?: boolean }) {
+function Aviso(props: {
+  titulo: string;
+  detalle?: string;
+  cargando?: boolean;
+  volver?: boolean;
+  reintentar?: () => void;
+}) {
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -65,7 +83,8 @@ function Aviso(props: { titulo: string; detalle?: string; cargando?: boolean; vo
           </Card.Content>
         )}
         {props.volver && (
-          <Card.Footer>
+          <Card.Footer className="gap-2">
+            {props.reintentar && <Button onPress={props.reintentar}>Reintentar</Button>}
             <Link to="/">
               <Button>Subir otro documento</Button>
             </Link>

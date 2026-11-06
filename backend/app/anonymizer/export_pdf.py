@@ -20,7 +20,8 @@ def export_pdf(data: bytes, replacements: dict[str, str]) -> bytes:
     ordered = sorted(replacements.items(), key=lambda kv: len(kv[0]), reverse=True)
     for page in doc:
         for original, marker in ordered:
-            for rect in page.search_for(original):
+            # Los saltos de línea del texto extraído no existen al buscar sobre la página.
+            for rect in page.search_for(" ".join(original.split())):
                 page.add_redact_annot(
                     rect,
                     text=marker,

@@ -44,5 +44,3 @@ export type Trabajo = {
   texto?: string;
   detecciones?: Deteccion[];
 };
-
-export type FormatoExportacion = "docx" | "pdf";

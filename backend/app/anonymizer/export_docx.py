@@ -104,6 +104,27 @@ def _visible_text(data: bytes) -> str:
     return "\n".join(chunks)
 
 
+def check_docx_supported(data: bytes) -> None:
+    """Falla con UnsupportedDocumentError si el DOCX trae comentarios o control de cambios."""
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        names = z.namelist()
+        roots = {n: _parse(z.read(n)) for n in names if _is_content_part(n)}
+    _reject_unsupported(names, roots)
+
+
+def docx_text(data: bytes) -> str:
+    """Texto del documento (cuerpo, encabezados, pies y notas), un párrafo por línea."""
+    lines: list[str] = []
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        for name in sorted(n for n in z.namelist() if _is_content_part(n)):
+            root = _parse(z.read(name))
+            for paragraph in root.iter(f"{{{W}}}p"):
+                text = "".join(t.text or "" for t in _own_texts(paragraph))
+                if text.strip():
+                    lines.append(text)
+    return "\n".join(lines)
+
+
 def export_docx(data: bytes, replacements: dict[str, str]) -> bytes:
     with zipfile.ZipFile(io.BytesIO(data)) as src:
         names = src.namelist()
