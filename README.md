@@ -1,4 +1,4 @@
-# Anon
+# Cifra
 
 Anonimizador de documentos judiciales (Argentina).
 
