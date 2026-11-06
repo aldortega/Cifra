@@ -1,0 +1,87 @@
+name: anon
+
+x-backend-env: &backend-env
+  ENVIRONMENT: development
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-anon}:${POSTGRES_PASSWORD:-anon}@postgres:5432/${POSTGRES_DB:-anon}
+  REDIS_URL: redis://redis:6379/0
+  CORS_ORIGINS: http://localhost:5173
+  STORAGE_DIR: /data/storage
+  FILE_TTL_HOURS: 24
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    environment: *backend-env
+    volumes:
+      - ./backend:/app
+      - storage:/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: ./backend
+    command: arq worker.settings.WorkerSettings --watch .
+    environment: *backend-env
+    volumes:
+      - ./backend:/app
+      - storage:/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-anon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-anon}
+      POSTGRES_DB: ${POSTGRES_DB:-anon}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
+  redis-data:
+  storage:
