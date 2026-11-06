@@ -38,7 +38,7 @@ EXAMPLES = [
 
 
 class LangExtractExtractor:
-    def __init__(self, api_key: str, model_id: str = "gemini-2.5-flash") -> None:
+    def __init__(self, api_key: str, model_id: str = "gemini-3.5-flash-lite") -> None:
         self.api_key = api_key
         self.model_id = model_id
 
