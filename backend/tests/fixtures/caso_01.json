@@ -1,0 +1,12 @@
+{
+  "text": "El actor Carlos Ibarra, DNI 27.345.678, con domicilio en Av. Corrientes 1234, piso 5, CABA, demanda a Marta Giménez, CUIT 27-12345678-4. Teléfono 11 4567-8901. El menor Tomás Ibarra, de 9 años, convive con el actor.",
+  "expected": [
+    {"category": "PERSONA", "value": "Carlos Ibarra"},
+    {"category": "DNI", "value": "27.345.678"},
+    {"category": "DOMICILIO", "value": "Av. Corrientes 1234, piso 5, CABA"},
+    {"category": "PERSONA", "value": "Marta Giménez"},
+    {"category": "DNI", "value": "27-12345678-4"},
+    {"category": "TELEFONO", "value": "11 4567-8901"},
+    {"category": "MENOR", "value": "Tomás Ibarra"}
+  ]
+}
