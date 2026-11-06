@@ -29,7 +29,7 @@ Cada aparición textual de una persona en el documento ("Juan Pérez", "J. Pére
 _Avoid_: Ocurrencia, alias
 
 **Persona**:
-Individuo único del documento que agrupa todas sus menciones y recibe un marcador numerado (`[PERSONA 1]`). El modelo propone el agrupamiento y quien revisa lo corrige.
+Individuo único del documento que agrupa todas sus menciones y recibe un marcador numerado (`[PERSONA 1]`). El sistema propone el agrupamiento (sin importar orden ni tratamientos como "Dr.") y quien revisa lo corrige.
 _Avoid_: Entidad, individuo
 
 **Rol procesal**:

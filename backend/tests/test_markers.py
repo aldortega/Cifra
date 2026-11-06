@@ -63,3 +63,48 @@ def test_replacements_map_each_literal_value_to_its_marker() -> None:
         "20.123.456": "[DNI 1]",
         "JUAN PEREZ": "[PERSONA 1]",
     }
+
+
+def persons(text: str, *values: str) -> list[Detection]:
+    dets, start = [], 0
+    for value in values:
+        i = text.index(value, start)
+        dets.append(Detection("PERSONA", i, i + len(value)))
+        start = i + len(value)
+    return dets
+
+
+def test_inverted_caratula_name_is_the_same_person() -> None:
+    text = '"GÓMEZ, ROBERTO CARLOS c/ X". El Sr. ROBERTO CARLOS GÓMEZ demanda.'
+    dets = persons(text, "GÓMEZ, ROBERTO CARLOS", "ROBERTO CARLOS GÓMEZ")
+    result = anonymize(text, dets, active={"PERSONA"})
+    assert result.text == '"[PERSONA 1] c/ X". El Sr. [PERSONA 1] demanda.'
+
+
+def test_courtesy_titles_do_not_split_a_person() -> None:
+    text = "el Dr. Sergio Ledesma y luego Sergio Ledesma"
+    dets = persons(text, "Dr. Sergio Ledesma", "Sergio Ledesma")
+    assert anonymize(text, dets, active={"PERSONA"}).text == "el [PERSONA 1] y luego [PERSONA 1]"
+
+
+def test_a_surname_alone_joins_the_only_person_who_has_it() -> None:
+    text = "perito Pablo Esteban Romero y testigo Ana Paz. Romero concluyó."
+    dets = persons(text, "Pablo Esteban Romero", "Ana Paz", "Romero")
+    result = anonymize(text, dets, active={"PERSONA"})
+    assert result.text == "perito [PERSONA 1] y testigo [PERSONA 2]. [PERSONA 1] concluyó."
+
+
+def test_an_ambiguous_surname_stays_a_separate_person() -> None:
+    text = "Carlos Ibarra y Tomás Ibarra. Ibarra declaró."
+    dets = persons(text, "Carlos Ibarra", "Tomás Ibarra", "Ibarra")
+    result = anonymize(text, dets, active={"PERSONA"})
+    assert result.text == "[PERSONA 1] y [PERSONA 2]. [PERSONA 3] declaró."
+
+
+def test_replacements_give_every_variant_the_same_marker() -> None:
+    text = "GÓMEZ, ROBERTO CARLOS y ROBERTO CARLOS GÓMEZ"
+    dets = persons(text, "GÓMEZ, ROBERTO CARLOS", "ROBERTO CARLOS GÓMEZ")
+    assert build_replacements(text, dets, active={"PERSONA"}) == {
+        "GÓMEZ, ROBERTO CARLOS": "[PERSONA 1]",
+        "ROBERTO CARLOS GÓMEZ": "[PERSONA 1]",
+    }

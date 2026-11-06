@@ -285,7 +285,7 @@ function DeteccionMarca(props: {
   const { segmento, texto, vistaPrevia, marcador, activa, alElegir } = props;
   const d = segmento.deteccion as Deteccion;
   const original = texto.slice(d.inicio, d.fin);
-  const muestraMarcador = vistaPrevia && d.estado === "confirmada" && marcador;
+  const muestraMarcador = vistaPrevia && marcador;
   return (
     <button
       type="button"
