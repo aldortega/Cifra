@@ -1,5 +1,6 @@
 import langextract as lx
 
+from app.anonymizer.alignment import align_extractions
 from app.anonymizer.markers import Detection
 
 CATEGORIES = [
@@ -12,7 +13,11 @@ PROMPT = (
     "literal tal como aparece, sin parafrasear ni solapar. Categorías: "
     + ", ".join(CATEGORIES)
     + ". DNI incluye CUIL y CUIT. Las personas menores de edad van en MENOR, no en PERSONA. "
-    "No extraigas roles procesales como 'el actor' o 'la demandada'."
+    "No extraigas roles procesales como 'el actor' o 'la demandada'. "
+    "MATRICULA es el dominio o patente de un vehículo (p. ej. 'AB 123 CD' o 'AA123BB'), no la "
+    "matrícula profesional de abogados o peritos. Incluí las personas en la carátula, tanto en "
+    "formato 'APELLIDO, Nombre' como en mayúsculas. Los números (DNI, CUIL, CUIT, teléfonos) se "
+    "copian completos, con sus puntos y guiones."
 )
 
 EXAMPLES = [
@@ -33,7 +38,25 @@ EXAMPLES = [
             lx.data.Extraction("EMAIL", "laura@example.com"),
             lx.data.Extraction("EXPEDIENTE", "1234/2023"),
         ],
-    )
+    ),
+    lx.data.ExampleData(
+        text=(
+            'Autos: "PAZ, MARCOS DANIEL c/ ROJAS, ELENA s/ DAÑOS Y PERJUICIOS". El actor circulaba '
+            "con su Fiat Cronos, dominio AC 987 ZX, cuando fue embestido por el rodado dominio "
+            "AA123BB. Declaró la testigo Irma Funes, DNI 21.456.789, CUIL 27-21456789-3, "
+            "domiciliada en calle Sarmiento N° 77, Barrio Norte, de la ciudad de Posadas."
+        ),
+        extractions=[
+            lx.data.Extraction("PERSONA", "PAZ, MARCOS DANIEL"),
+            lx.data.Extraction("PERSONA", "ROJAS, ELENA"),
+            lx.data.Extraction("MATRICULA", "AC 987 ZX"),
+            lx.data.Extraction("MATRICULA", "AA123BB"),
+            lx.data.Extraction("PERSONA", "Irma Funes"),
+            lx.data.Extraction("DNI", "21.456.789"),
+            lx.data.Extraction("DNI", "27-21456789-3"),
+            lx.data.Extraction("DOMICILIO", "calle Sarmiento N° 77, Barrio Norte"),
+        ],
+    ),
 ]
 
 
@@ -51,10 +74,5 @@ class LangExtractExtractor:
             api_key=self.api_key,
             language_model_params={"http_options": {"api_version": "v1beta"}},
         )
-        detections = []
-        for e in result.extractions:
-            interval = e.char_interval
-            if interval is None or interval.start_pos is None or interval.end_pos is None:
-                continue
-            detections.append(Detection(e.extraction_class, interval.start_pos, interval.end_pos))
-        return detections
+        pairs = [(e.extraction_class, e.extraction_text) for e in result.extractions]
+        return align_extractions(text, pairs)

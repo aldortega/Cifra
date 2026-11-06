@@ -46,3 +46,32 @@ def test_loads_synthetic_fixtures() -> None:
     raw = json.loads((FIXTURES / "caso_01.json").read_text())
     for category, value in cases[0].expected:
         assert value in raw["text"], (category, value)
+
+
+class SpanExtractor:
+    def __init__(self, spans: list[tuple[str, int, int]]) -> None:
+        self.spans = spans
+
+    def extract(self, text: str) -> list[Detection]:
+        return [Detection(c, s, e) for c, s, e in self.spans]
+
+
+def test_a_wider_detection_still_covers_the_expected_value() -> None:
+    text = "vive en calle Mitre 450, de la ciudad de Rosario"
+    case = Case(text=text, expected=[("DOMICILIO", "calle Mitre 450")])
+    extractor = SpanExtractor([("DOMICILIO", 8, len(text))])
+    assert recall_by_category(extractor, [case]) == {"DOMICILIO": 1.0}
+
+
+def test_a_narrower_detection_leaves_part_of_the_value_exposed() -> None:
+    text = "ROBERTO CARLOS GÓMEZ"
+    case = Case(text=text, expected=[("PERSONA", "ROBERTO CARLOS GÓMEZ")])
+    extractor = SpanExtractor([("PERSONA", 0, 14)])
+    assert recall_by_category(extractor, [case]) == {"PERSONA": 0.0}
+
+
+def test_every_occurrence_of_the_value_must_be_covered() -> None:
+    text = "Ana Paz y luego Ana Paz"
+    case = Case(text=text, expected=[("PERSONA", "Ana Paz")])
+    extractor = SpanExtractor([("PERSONA", 0, 7)])
+    assert recall_by_category(extractor, [case]) == {"PERSONA": 0.0}
