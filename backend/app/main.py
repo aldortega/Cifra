@@ -7,7 +7,7 @@ from app.core.config import get_settings
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="Anon API", version="0.1.0")
+    app = FastAPI(title="Cifra API", version="0.1.0")
 
     app.add_middleware(
         CORSMiddleware,
@@ -16,6 +16,8 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # Sin esto el navegador no deja leer el nombre del archivo exportado.
+        expose_headers=["Content-Disposition"],
     )
 
     app.include_router(health.router)

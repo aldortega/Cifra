@@ -1,12 +1,16 @@
+import unicodedata
 from collections.abc import Awaitable, Callable
 from functools import lru_cache
+from pathlib import PurePath
 from typing import Annotated, Any, Literal
+from urllib.parse import quote
 
 from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from pydantic import BaseModel, Field
 
+from app.anonymizer.convert import layout_to_docx, layout_to_pdf
 from app.anonymizer.export_docx import UnsupportedDocumentError, export_docx
 from app.anonymizer.export_pdf import export_pdf
 from app.anonymizer.leak import LeakError
@@ -52,6 +56,8 @@ class DetectionIn(BaseModel):
 
 class ExportIn(BaseModel):
     detecciones: list[DetectionIn]
+    # Formato del archivo exportado; por defecto, el mismo del original.
+    salida: Literal["pdf", "docx"] | None = None
 
 
 def _public(record: dict[str, Any]) -> dict[str, Any]:
@@ -98,6 +104,13 @@ def get_job(job_id: str, store: Annotated[JobStore, Depends(get_store)]) -> dict
     return _public(record)
 
 
+@router.delete("/{job_id}", status_code=204)
+def cancel_job(job_id: str, store: Annotated[JobStore, Depends(get_store)]) -> Response:
+    """Cancela el trabajo y borra todo lo guardado; el worker deja de procesarlo al notarlo."""
+    store.remove(job_id)
+    return Response(status_code=204)
+
+
 @router.post("/{job_id}/retry", status_code=202)
 async def retry_job(
     job_id: str,
@@ -136,21 +149,39 @@ def export_job(
     ]
     confirmed_categories = {d.category for d in confirmed}
     replacements = build_replacements(text, confirmed, active=confirmed_categories)
+    target = f".{body.salida}" if body.salida else record["extension"]
+    layout = record.get("formato")
+    if target != record["extension"] and not layout:
+        raise HTTPException(
+            status_code=409,
+            detail="Este trabajo solo se puede exportar en su formato original.",
+        )
     try:
         original = store.read_original(job_id, record["extension"])
     except FileNotFoundError as error:
         raise HTTPException(status_code=409, detail="El documento original ya no está.") from error
     try:
-        if record["extension"] == ".pdf":
-            exported = export_pdf(original, replacements)
+        if target == record["extension"]:
+            # Mismo formato: se reemplaza sobre el original, que conserva todo su diseño.
+            export = export_pdf if target == ".pdf" else export_docx
+            exported = export(original, replacements)
+        elif target == ".pdf":
+            exported = layout_to_pdf(text, layout, replacements)
         else:
-            exported = export_docx(original, replacements)
+            exported = layout_to_docx(text, layout, replacements)
     except (LeakError, UnsupportedDocumentError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     store.discard_content(job_id, "exportado")
-    name = f"anonimizado{record['extension']}"
+    name = f"{PurePath(record['nombreArchivo']).stem or 'documento'}_anonimizado{target}"
     return Response(
         exported,
-        media_type=MEDIA_TYPES[record["extension"]],
-        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+        media_type=MEDIA_TYPES[target],
+        headers={"Content-Disposition": _attachment(name)},
     )
+
+
+def _attachment(name: str) -> str:
+    """Content-Disposition con respaldo ASCII y el nombre real en UTF-8 (RFC 6266)."""
+    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    ascii_name = ascii_name.replace('"', "").replace("\\", "") or "documento"
+    return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name)}"

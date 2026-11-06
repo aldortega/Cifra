@@ -2,6 +2,8 @@ import io
 import zipfile
 from pathlib import Path
 
+import pymupdf
+from docx import Document
 from fastapi.testclient import TestClient
 
 from tests.helpers import docx_bytes, docx_with_comments, pdf_bytes
@@ -169,3 +171,66 @@ def test_job_in_review_includes_layout_matching_the_text(client: TestClient) -> 
     assert formato["tipo"] == "docx"
     parrafos = [job["texto"][p["inicio"] : p["fin"]] for p in formato["parrafos"]]
     assert parrafos == ["El actor Juan Pérez.", "Vive en Mitre 450."]
+
+
+def test_docx_can_be_exported_as_pdf(client: TestClient) -> None:
+    res = upload(client, "caso.docx", docx_bytes(TEXTO))
+    job_id = res.json()["id"]
+    job = client.get(f"/jobs/{job_id}").json()
+    body = {"detecciones": decisions(job, "confirmada"), "salida": "pdf"}
+    res = client.post(f"/jobs/{job_id}/export", json=body)
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "application/pdf"
+    assert 'filename="caso_anonimizado.pdf"' in res.headers["content-disposition"]
+    with pymupdf.open(stream=res.content) as doc:
+        content = " ".join(page.get_text() for page in doc)
+    assert "Juan Pérez" not in content
+    assert "[PERSONA 1]" in content
+
+
+def test_pdf_can_be_exported_as_docx(client: TestClient) -> None:
+    res = client.post(
+        "/jobs",
+        files={"archivo": ("caso.pdf", pdf_bytes(TEXTO), "application/pdf")},
+        data={"categorias": ["PERSONA", "DNI", "DOMICILIO"]},
+    )
+    job_id = res.json()["id"]
+    job = client.get(f"/jobs/{job_id}").json()
+    body = {"detecciones": decisions(job, "confirmada"), "salida": "docx"}
+    res = client.post(f"/jobs/{job_id}/export", json=body)
+    assert res.status_code == 200
+    assert 'filename="caso_anonimizado.docx"' in res.headers["content-disposition"]
+    text = "\n".join(p.text for p in Document(io.BytesIO(res.content)).paragraphs)
+    assert "Juan Pérez" not in text
+    assert "[PERSONA 1]" in text
+    assert "[DNI 1]" in text
+
+
+def test_cancelling_a_job_deletes_it_and_its_original(client: TestClient, store) -> None:
+    job_id = upload(client, "sentencia.docx", docx_bytes(TEXTO)).json()["id"]
+    assert client.delete(f"/jobs/{job_id}").status_code == 204
+    assert not (store.root / job_id).exists()
+    assert client.get(f"/jobs/{job_id}").json()["estado"] == "vencido"
+
+
+def test_cancelling_an_unknown_job_is_harmless(client: TestClient) -> None:
+    assert client.delete("/jobs/no-existe-este-trabajo-xx").status_code == 204
+
+
+def test_exported_file_keeps_the_original_name_even_with_accents(client: TestClient) -> None:
+    job_id = upload(client, "Sentencia Pérez.docx", docx_bytes(TEXTO)).json()["id"]
+    job = client.get(f"/jobs/{job_id}").json()
+    res = client.post(f"/jobs/{job_id}/export", json={"detecciones": decisions(job, "confirmada")})
+    disposition = res.headers["content-disposition"]
+    assert 'filename="Sentencia Perez_anonimizado.docx"' in disposition  # respaldo ASCII
+    assert "filename*=UTF-8''Sentencia%20P%C3%A9rez_anonimizado.docx" in disposition
+
+
+def test_the_browser_can_read_the_download_name(client: TestClient) -> None:
+    res = client.options(
+        "/jobs/x",
+        headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "POST"},
+    )
+    get = client.get("/jobs/no-existe-este-trabajo-xx", headers={"Origin": "http://localhost:5173"})
+    assert res.status_code == 200
+    assert "content-disposition" in get.headers["access-control-expose-headers"].lower()
