@@ -10,6 +10,18 @@ export function normalizar(valor: string): string {
     .trim();
 }
 
+/** Detecciones sin solapar: ante un solapamiento gana la que empieza antes y, a igual inicio, la más larga. */
+export function sinSolapar(detecciones: Deteccion[]): Deteccion[] {
+  const elegidas: Deteccion[] = [];
+  let cursor = 0;
+  for (const d of [...detecciones].sort((a, b) => a.inicio - b.inicio || b.fin - a.fin)) {
+    if (d.inicio < cursor || d.fin <= d.inicio) continue;
+    elegidas.push(d);
+    cursor = d.fin;
+  }
+  return elegidas;
+}
+
 const CATEGORIAS_DE_PERSONAS = new Set(["PERSONA", "MENOR"]);
 const TRATAMIENTOS = new Set([
   "dr",
@@ -68,9 +80,11 @@ export function etiquetasDeMarcadores(
   detecciones: Deteccion[],
 ): Map<string, string> {
   // Los menores se anonimizan siempre, aunque se hayan descartado (el servidor lo impone).
-  const anonimizadas = detecciones
-    .filter((d) => d.estado === "confirmada" || d.categoria === "MENOR")
-    .sort((a, b) => a.inicio - b.inicio);
+  // Como en el servidor, una detección contenida en otra (un nombre dentro de la carátula) no
+  // genera marcador propio.
+  const anonimizadas = sinSolapar(
+    detecciones.filter((d) => d.estado === "confirmada" || d.categoria === "MENOR"),
+  );
   const identidades = clavesDeIdentidad(texto, anonimizadas);
   const numeros = new Map<string, number>();
   const contadores = new Map<string, number>();

@@ -43,7 +43,7 @@ const PALETAS: Record<string, Paleta | undefined> = {
     confirmada: "bg-cyan-500/25 decoration-cyan-600",
     chip: "bg-cyan-500/15 text-cyan-700",
   },
-  FECHA_NACIMIENTO: {
+  FECHA: {
     punto: "bg-pink-500",
     pendiente: "bg-pink-500/10 decoration-pink-500",
     confirmada: "bg-pink-500/25 decoration-pink-600",
@@ -84,6 +84,12 @@ const PALETAS: Record<string, Paleta | undefined> = {
     pendiente: "bg-slate-500/10 decoration-slate-500",
     confirmada: "bg-slate-500/25 decoration-slate-600",
     chip: "bg-slate-500/15 text-slate-700",
+  },
+  CARATULA: {
+    punto: "bg-stone-500",
+    pendiente: "bg-stone-500/10 decoration-stone-500",
+    confirmada: "bg-stone-500/25 decoration-stone-600",
+    chip: "bg-stone-500/15 text-stone-700",
   },
   MENOR: {
     punto: "bg-red-600",

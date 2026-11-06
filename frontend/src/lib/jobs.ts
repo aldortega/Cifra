@@ -16,16 +16,37 @@ export async function reintentarTrabajo(id: string): Promise<void> {
   await apiRequest(`/jobs/${id}/retry`, { method: "POST" });
 }
 
-/** Exporta con las decisiones de la revisión. Se descarga en el mismo formato del original. */
+/** Cancela el trabajo: el servidor borra el original y deja de procesarlo. */
+export async function cancelarTrabajo(id: string): Promise<void> {
+  await apiRequest(`/jobs/${id}`, { method: "DELETE" });
+}
+
+export type FormatoSalida = "pdf" | "docx";
+
+/** Exporta con las decisiones de la revisión, en el formato pedido (por defecto, el original). */
 export async function exportarTrabajo(
   id: string,
   detecciones: Deteccion[],
+  salida?: FormatoSalida,
 ): Promise<{ nombre: string; url: string }> {
   const res = await apiRequest(`/jobs/${id}/export`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ detecciones }),
+    body: JSON.stringify({ detecciones, salida }),
   });
-  const nombre = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1];
-  return { nombre: nombre ?? "anonimizado", url: URL.createObjectURL(await res.blob()) };
+  return { nombre: nombreDescarga(res, salida), url: URL.createObjectURL(await res.blob()) };
+}
+
+/** Nombre del archivo según el servidor: prefiere la versión UTF-8 (`filename*`). */
+function nombreDescarga(res: Response, salida?: FormatoSalida): string {
+  const cabecera = res.headers.get("Content-Disposition") ?? "";
+  const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(cabecera)?.[1];
+  if (utf8) {
+    try {
+      return decodeURIComponent(utf8);
+    } catch {
+      // Codificación inválida: se usa el nombre ASCII.
+    }
+  }
+  return /filename="([^"]+)"/.exec(cabecera)?.[1] ?? `anonimizado.${salida ?? "docx"}`;
 }

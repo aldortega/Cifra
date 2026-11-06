@@ -4,13 +4,14 @@ export const CATEGORIAS = [
   { id: "DOMICILIO", nombre: "Domicilios", porDefecto: true },
   { id: "TELEFONO", nombre: "Teléfonos", porDefecto: true },
   { id: "EMAIL", nombre: "Emails", porDefecto: true },
-  { id: "FECHA_NACIMIENTO", nombre: "Fechas de nacimiento", porDefecto: true },
+  { id: "FECHA", nombre: "Fechas", porDefecto: true },
   { id: "MATRICULA", nombre: "Patentes de vehículos", porDefecto: true },
   { id: "MATRICULA_PROFESIONAL", nombre: "Matrículas profesionales", porDefecto: true },
   { id: "POLIZA", nombre: "Pólizas de seguro", porDefecto: true },
   { id: "CBU", nombre: "CBU / cuentas", porDefecto: true },
   { id: "SALUD", nombre: "Datos de salud", porDefecto: true },
-  { id: "EXPEDIENTE", nombre: "Número de expediente", porDefecto: false },
+  { id: "EXPEDIENTE", nombre: "Número de expediente", porDefecto: true },
+  { id: "CARATULA", nombre: "Carátula", porDefecto: true },
   { id: "MENOR", nombre: "Menores", porDefecto: true, bloqueada: true },
 ] as const;
 
@@ -98,7 +99,17 @@ export type ParrafoDocx = {
   espacioAntes: number;
   interlineado: number;
   celda: { tabla: number; fila: number; columna: number } | null;
+  /** Párrafo de una nota al pie o final; `primero` lleva el número de la nota. */
+  nota?: { tipo: TipoNota; numero: number; primero: boolean } | null;
 };
+
+export type TipoNota = "nota" | "final";
+
+/** Campo de Word que se completa al imprimir; mide cero si no guardaba un resultado. */
+export type CampoDocx = { inicio: number; fin: number; tipo: "pagina" | "paginas" };
+
+/** Llamada a una nota dentro del texto. */
+export type ReferenciaDocx = { posicion: number; tipo: TipoNota; id: string; numero: number };
 
 export type FormatoDocx = {
   tipo: "docx";
@@ -112,6 +123,8 @@ export type FormatoDocx = {
   };
   parrafos: ParrafoDocx[];
   estilos: Estilo[];
+  campos?: CampoDocx[];
+  referencias?: ReferenciaDocx[];
 };
 
 export type Formato = FormatoPdf | FormatoDocx;

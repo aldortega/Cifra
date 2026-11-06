@@ -1,12 +1,12 @@
 import { Button } from "@heroui/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useEffect, useEffectEvent, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 
 import { IconoAlerta, IconoCheck, IconoReloj } from "@/components/Iconos";
 import { PantallaMensaje } from "@/components/Marco";
 import { ReviewView } from "@/components/ReviewView";
-import { obtenerTrabajo, reintentarTrabajo } from "@/lib/jobs";
+import { cancelarTrabajo, obtenerTrabajo, reintentarTrabajo } from "@/lib/jobs";
 import type { EstadoTrabajo, Progreso } from "@/lib/types";
 
 export function JobPage() {
@@ -18,6 +18,12 @@ export function JobPage() {
     refetchInterval: (query) =>
       query.state.data && ["subido", "procesando"].includes(query.state.data.estado) ? 1500 : false,
     refetchOnWindowFocus: false,
+  });
+
+  const navigate = useNavigate();
+  const cancelar = useMutation({
+    mutationFn: () => cancelarTrabajo(id),
+    onSuccess: () => navigate("/"),
   });
 
   const reintentar = useMutation({
@@ -43,7 +49,16 @@ export function JobPage() {
   switch (t.estado) {
     case "subido":
     case "procesando":
-      return <Procesando estado={t.estado} nombre={t.nombreArchivo} progreso={t.progreso} />;
+      return (
+        <Procesando
+          estado={t.estado}
+          nombre={t.nombreArchivo}
+          progreso={t.progreso}
+          cancelando={cancelar.isPending}
+          errorAlCancelar={cancelar.error?.message}
+          alCancelar={() => cancelar.mutate()}
+        />
+      );
     case "en_revision":
       return <ReviewView trabajo={t} />;
     case "fallido":
@@ -94,71 +109,127 @@ function Volver({ variante }: { variante?: "secondary" }) {
   );
 }
 
-const PASOS = ["Documento recibido", "Leyendo el documento", "Detectando datos sensibles"];
+/** Tiempo supuesto por fragmento hasta medir el primero real. */
+const FRAGMENTO_ESTIMADO_MS = 12_000;
+const DEMORA_NORMAL_MS = 60_000;
 
-function Procesando(props: { estado: EstadoTrabajo; nombre?: string; progreso?: Progreso | null }) {
+function Procesando(props: {
+  estado: EstadoTrabajo;
+  nombre?: string;
+  progreso?: Progreso | null;
+  cancelando?: boolean;
+  errorAlCancelar?: string;
+  alCancelar?: () => void;
+}) {
   const { estado, nombre, progreso } = props;
-  const [segundos, setSegundos] = useState(0);
+  const hechos = progreso?.hechos ?? null;
+
+  // Reloj interno: registra cuándo empezó el análisis y cuándo avanzó por última vez, para
+  // estimar el ritmo y mover la barra entre un fragmento y el siguiente.
+  const [reloj, setReloj] = useState(() => {
+    const ahora = Date.now();
+    return {
+      ahora,
+      montado: ahora,
+      hechos,
+      cambio: ahora,
+      inicioAnalisis: hechos === null ? 0 : ahora,
+    };
+  });
+  const tic = useEffectEvent(() =>
+    setReloj((previo) => {
+      const ahora = Date.now();
+      if (hechos === previo.hechos) return { ...previo, ahora };
+      return {
+        ...previo,
+        ahora,
+        hechos,
+        cambio: ahora,
+        inicioAnalisis: previo.hechos === null ? ahora : previo.inicioAnalisis,
+      };
+    }),
+  );
   useEffect(() => {
-    const intervalo = setInterval(() => setSegundos((s) => s + 1), 1000);
+    const intervalo = setInterval(tic, 200);
     return () => clearInterval(intervalo);
   }, []);
 
-  // Paso real informado por el backend: sin avance todavía, el worker está leyendo el documento.
-  const actual = estado === "subido" ? 0 : progreso ? 2 : 1;
-  const porcentaje = progreso?.total ? Math.round((progreso.hechos / progreso.total) * 100) : 0;
+  let porcentaje: number;
+  let etapa: string;
+  if (estado === "subido") {
+    porcentaje = 2;
+    etapa = "Recibiendo el documento…";
+  } else if (!progreso?.total || reloj.hechos === null) {
+    porcentaje = 5;
+    etapa = "Leyendo el documento…";
+  } else {
+    const ritmo =
+      reloj.hechos > 0
+        ? (reloj.cambio - reloj.inicioAnalisis) / reloj.hechos
+        : FRAGMENTO_ESTIMADO_MS;
+    // Avanza hasta el 90 % del tramo que falta para el próximo fragmento, nunca más.
+    const parcial = Math.min(0.9, (reloj.ahora - reloj.cambio) / Math.max(ritmo, 1));
+    const fraccion = Math.min(1, (reloj.hechos + parcial) / progreso.total);
+    porcentaje = 8 + 92 * fraccion;
+    etapa = "Buscando datos sensibles…";
+  }
+  const demorado = reloj.ahora - reloj.montado > DEMORA_NORMAL_MS;
 
   return (
-    <PantallaMensaje
-      icono={
-        <span className="size-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
-      }
-      titulo="Procesando el documento"
-      detalle={
-        <>
-          {nombre && <span className="font-medium text-foreground">{nombre}</span>}
-          {nombre && " · "}
-          {segundos} s
-        </>
-      }
-    >
-      <ol className="flex flex-col gap-1 rounded-2xl border border-separator bg-surface p-3 text-left text-sm">
-        {PASOS.map((paso, i) => (
-          <li
-            key={paso}
-            className={`flex flex-col gap-2 rounded-lg px-2 py-2 ${i === actual ? "bg-surface-secondary" : ""}`}
-          >
-            <div className="flex items-center gap-3">
-              <span
-                className={`grid size-5 shrink-0 place-items-center rounded-full text-xs ${
-                  i < actual
-                    ? "bg-success text-success-foreground"
-                    : i === actual
-                      ? "border-2 border-accent border-t-transparent animate-spin"
-                      : "border border-separator"
-                }`}
-              >
-                {i < actual && <IconoCheck className="size-3" />}
-              </span>
-              <span className={`flex-1 ${i > actual ? "text-muted" : "font-medium"}`}>{paso}</span>
-              {i === 2 && progreso && (
-                <span className="text-xs tabular-nums text-muted">
-                  {progreso.hechos} de {progreso.total} fragmentos · {porcentaje} %
-                </span>
-              )}
-            </div>
-            {i === 2 && progreso && (
-              <progress
-                aria-label="Avance del análisis"
-                value={porcentaje}
-                max={100}
-                className="ml-8 h-1.5 w-[calc(100%-2rem)] appearance-none overflow-hidden rounded-full [&::-moz-progress-bar]:bg-accent [&::-webkit-progress-bar]:bg-background [&::-webkit-progress-value]:bg-accent [&::-webkit-progress-value]:transition-all"
-              />
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="flex w-full max-w-md flex-col gap-6">
+        <h1 className="text-center text-lg font-semibold tracking-tight">
+          Procesando {nombre ? <span className="break-all">{nombre}</span> : "el documento"}
+        </h1>
+
+        <div className="flex flex-col gap-2">
+          <progress
+            aria-label="Avance del procesamiento"
+            value={porcentaje}
+            max={100}
+            className="h-2 w-full appearance-none overflow-hidden rounded-full [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-accent [&::-webkit-progress-bar]:bg-surface-secondary [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-accent [&::-webkit-progress-value]:transition-[width] [&::-webkit-progress-value]:duration-300"
+          />
+          <div className="flex justify-between text-sm text-muted">
+            <span>{etapa}</span>
+            <span className="tabular-nums">{Math.round(porcentaje)} %</span>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-muted">
+          {demorado ? "Está tardando más de lo normal…" : "Suele tardar menos de un minuto."}
+        </p>
+
+        <p className="rounded-xl bg-surface-secondary px-4 py-3 text-center text-xs text-muted">
+          Mientras tanto: <Tecla>X</Tecla> confirma, <Tecla>Z</Tecla> descarta y <Tecla>↑</Tecla>{" "}
+          <Tecla>↓</Tecla> te mueven entre los datos.
+        </p>
+
+        {props.alCancelar && (
+          <div className="flex flex-col items-center gap-1 text-xs">
+            <button
+              type="button"
+              disabled={props.cancelando}
+              onClick={props.alCancelar}
+              className="text-muted hover:text-foreground hover:underline disabled:opacity-60"
+            >
+              {props.cancelando ? "Cancelando…" : "Cancelar y subir otro documento"}
+            </button>
+            {props.errorAlCancelar && (
+              <p role="alert" className="text-danger">
+                No se pudo cancelar: {props.errorAlCancelar}
+              </p>
             )}
-          </li>
-        ))}
-      </ol>
-      <p className="mt-4 text-xs text-muted">Suele tardar menos de un minuto.</p>
-    </PantallaMensaje>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Tecla({ children }: { children: string }) {
+  return (
+    <kbd className="mx-0.5 inline-grid min-w-5 place-items-center rounded border border-separator bg-surface px-1 font-sans text-[10px] font-medium text-foreground">
+      {children}
+    </kbd>
   );
 }

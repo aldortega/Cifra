@@ -10,6 +10,7 @@ import {
   type FormatoDocx,
   type FormatoPdf,
   type ParrafoDocx,
+  type TipoNota,
   nombreCategoria,
 } from "@/lib/types";
 
@@ -120,16 +121,46 @@ const ALINEACION_CSS: Record<Alineacion, CSSProperties["textAlign"]> = {
   justificado: "justify",
 };
 
-const SECCIONES: { id: ParrafoDocx["seccion"]; nombre?: string }[] = [
-  { id: "encabezado", nombre: "Encabezado" },
-  { id: "cuerpo" },
-  { id: "notas", nombre: "Notas" },
-  { id: "pie", nombre: "Pie de página" },
-];
+/** Distancia (pt) del encabezado y del pie al borde de la hoja: el valor por defecto de Word. */
+const DISTANCIA_ENCABEZADO = 36;
 
 function VisorDocx(props: PropsVisor & { formato: FormatoDocx; ancho: CSSProperties }) {
   const { pagina, parrafos } = props.formato;
   const pt = (valor: number) => `calc(var(--pt) * ${valor})`;
+  const de = (seccion: ParrafoDocx["seccion"]) =>
+    agruparTablas(parrafos.filter((p) => p.seccion === seccion)).map((b) =>
+      Array.isArray(b) ? (
+        <TablaDocx key={b[0]?.inicio} parrafos={b} visor={props} />
+      ) : (
+        <ParrafoConFormato key={b.inicio} parrafo={b} visor={props} />
+      ),
+    );
+  const encabezado = de("encabezado");
+  // Primero las notas al pie y después las finales, cada grupo en orden de número.
+  const notas = agruparTablas(
+    parrafos
+      .filter((p) => p.seccion === "notas")
+      .sort(
+        (a, b) =>
+          Number(a.nota?.tipo === "final") - Number(b.nota?.tipo === "final") ||
+          (a.nota?.numero ?? 0) - (b.nota?.numero ?? 0) ||
+          a.inicio - b.inicio,
+      ),
+  ).map((b) =>
+    Array.isArray(b) ? (
+      <TablaDocx key={b[0]?.inicio} parrafos={b} visor={props} />
+    ) : (
+      <ParrafoConFormato key={b.inicio} parrafo={b} visor={props} />
+    ),
+  );
+  const pie = de("pie");
+  // Con encabezado o pie, estos ocupan el margen como en Word: a 36 pt del borde de la hoja.
+  const arriba = encabezado.length
+    ? Math.min(DISTANCIA_ENCABEZADO, pagina.margenSuperior)
+    : pagina.margenSuperior;
+  const abajo = pie.length
+    ? Math.min(DISTANCIA_ENCABEZADO, pagina.margenInferior)
+    : pagina.margenInferior;
 
   return (
     <div className={`${HOJA} [container-type:inline-size]`} style={props.ancho}>
@@ -138,37 +169,40 @@ function VisorDocx(props: PropsVisor & { formato: FormatoDocx; ancho: CSSPropert
         style={
           {
             "--pt": `calc(100cqw / ${pagina.ancho})`,
-            padding: `${pt(pagina.margenSuperior)} ${pt(pagina.margenDerecho)} ${pt(pagina.margenInferior)} ${pt(pagina.margenIzquierdo)}`,
+            padding: `${pt(arriba)} ${pt(pagina.margenDerecho)} ${pt(abajo)} ${pt(pagina.margenIzquierdo)}`,
             minHeight: pt(pagina.alto),
           } as CSSProperties
         }
       >
-        {SECCIONES.map(({ id, nombre }) => {
-          const propios = parrafos.filter((p) => p.seccion === id);
-          if (!propios.length) return null;
-          const bloques = agruparTablas(propios);
-          const contenido = bloques.map((b) =>
-            Array.isArray(b) ? (
-              <TablaDocx key={b[0]?.inicio} parrafos={b} visor={props} />
-            ) : (
-              <ParrafoConFormato key={b.inicio} parrafo={b} visor={props} />
-            ),
-          );
-          if (!nombre) return <div key={id}>{contenido}</div>;
-          const arriba = id === "encabezado";
-          return (
-            <section
-              key={id}
-              aria-label={nombre}
-              className={`border-dashed border-black/15 ${arriba ? "mb-6 border-b pb-3" : "mt-8 border-t pt-3"}`}
-            >
-              <p className="mb-1 font-sans text-[10px] font-medium tracking-wider text-black/40 uppercase">
-                {nombre}
-              </p>
-              {contenido}
-            </section>
-          );
-        })}
+        {encabezado.length > 0 && (
+          <header
+            aria-label="Encabezado"
+            className="opacity-60"
+            style={{ marginBottom: pt(Math.max(12, pagina.margenSuperior - arriba - 14)) }}
+          >
+            {encabezado}
+          </header>
+        )}
+        <div>{de("cuerpo")}</div>
+        {notas.length > 0 && (
+          <aside aria-label="Notas al pie" style={{ marginTop: pt(24) }}>
+            {/* La rayita corta que separa las notas del texto, como en un documento impreso. */}
+            <hr
+              className="w-1/3 border-0 border-t border-black/40"
+              style={{ marginBottom: pt(4) }}
+            />
+            {notas}
+          </aside>
+        )}
+        {pie.length > 0 && (
+          <footer
+            aria-label="Pie de página"
+            className="mt-auto opacity-60"
+            style={{ paddingTop: pt(24) }}
+          >
+            {pie}
+          </footer>
+        )}
       </div>
     </div>
   );
@@ -231,6 +265,9 @@ function ParrafoConFormato(props: { parrafo: ParrafoDocx; visor: PropsVisor; enC
         lineHeight: p.interlineado,
       }}
     >
+      {p.nota?.primero && (
+        <sup className="mr-0.5 text-[0.7em]">{etiquetaNota(p.nota.tipo, p.nota.numero)}</sup>
+      )}
       <Tramo {...visor} inicio={p.inicio} fin={p.fin} escala="pt" />
     </p>
   );
@@ -299,9 +336,73 @@ function estiloCss(estilo: Estilo | undefined, escala: Escala): CSSProperties {
 }
 
 /** Texto entre `inicio` y `fin`, partido por estilos y por detecciones. */
+/** Notas al pie con números arábigos y notas finales con romanos, como Word por defecto. */
+function etiquetaNota(tipo: TipoNota, numero: number): string {
+  if (tipo === "nota") return String(numero);
+  let n = numero;
+  let out = "";
+  for (const [valor, cifras] of [
+    [10, "x"],
+    [9, "ix"],
+    [5, "v"],
+    [4, "iv"],
+    [1, "i"],
+  ] as const) {
+    while (n >= valor) {
+      out += cifras;
+      n -= valor;
+    }
+  }
+  return out;
+}
+
+type Insercion = { posicion: number; nodo: ReactNode };
+
+/** Llamadas a notas y números de página que no forman parte del texto, dentro del tramo. */
+function inserciones(formato: PropsVisor["formato"], inicio: number, fin: number): Insercion[] {
+  if (formato?.tipo !== "docx") return [];
+  const dentro = (posicion: number) => posicion >= inicio && posicion <= fin;
+  const notas = (formato.referencias ?? [])
+    .filter((r) => dentro(r.posicion))
+    .map((r) => ({
+      posicion: r.posicion,
+      nodo: (
+        <sup
+          key={`n${r.tipo}${r.numero}-${r.posicion}`}
+          className="text-[0.7em]"
+          title={r.tipo === "nota" ? `Nota al pie ${r.numero}` : `Nota final ${r.numero}`}
+        >
+          {etiquetaNota(r.tipo, r.numero)}
+        </sup>
+      ),
+    }));
+  // Los campos con resultado guardado ya muestran su texto; los vacíos se señalan con "#".
+  const campos = (formato.campos ?? [])
+    .filter((c) => c.inicio === c.fin && dentro(c.inicio))
+    .map((c) => ({
+      posicion: c.inicio,
+      nodo: (
+        <span
+          key={`c${c.tipo}-${c.inicio}`}
+          className="rounded-sm bg-black/5 px-0.5 text-black/50"
+          title={
+            c.tipo === "pagina"
+              ? "Número de página: se completa al exportar a PDF"
+              : "Total de páginas: se completa al exportar a PDF"
+          }
+        >
+          #
+        </span>
+      ),
+    }));
+  return [...notas, ...campos].sort((a, b) => a.posicion - b.posicion);
+}
+
 function Tramo(props: PropsVisor & { inicio: number; fin: number; escala: Escala }) {
   const { inicio, fin, texto, detecciones, escala } = props;
   const estilos = props.formato?.estilos ?? [];
+  const extras = inserciones(props.formato, inicio, fin);
+  let iExtra = 0;
 
   // Puntos de corte: bordes del tramo, de cada estilo y de cada detección dentro de él.
   const cortes = new Set([inicio, fin]);
@@ -320,6 +421,7 @@ function Tramo(props: PropsVisor & { inicio: number; fin: number; escala: Escala
     if (d.inicio > inicio) cortes.add(d.inicio);
     if (d.fin < fin) cortes.add(d.fin);
   }
+  for (const extra of extras) cortes.add(extra.posicion);
   const puntos = [...cortes].sort((a, b) => a - b);
 
   const nodos: ReactNode[] = [];
@@ -354,6 +456,11 @@ function Tramo(props: PropsVisor & { inicio: number; fin: number; escala: Escala
     const p = propias[iDet];
     const det = p && p.inicio <= desde ? p : undefined;
 
+    if (iExtra < extras.length && (extras[iExtra] as Insercion).posicion <= desde) cerrar();
+    while (iExtra < extras.length && (extras[iExtra] as Insercion).posicion <= desde) {
+      nodos.push((extras[iExtra] as Insercion).nodo);
+      iExtra++;
+    }
     if (det !== actual) cerrar();
     actual = det;
     const pieza = { inicio: desde, fin: hasta, estilo };
@@ -361,6 +468,8 @@ function Tramo(props: PropsVisor & { inicio: number; fin: number; escala: Escala
     else nodos.push(<PiezaTexto key={desde} pieza={pieza} texto={texto} escala={escala} />);
   }
   cerrar();
+  // Lo que va al final del tramo (p. ej. una llamada después del último carácter).
+  for (; iExtra < extras.length; iExtra++) nodos.push((extras[iExtra] as Insercion).nodo);
   return <>{nodos}</>;
 }
 

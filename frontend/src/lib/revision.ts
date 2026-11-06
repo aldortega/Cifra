@@ -1,14 +1,21 @@
-import { normalizar } from "./marcadores";
+import { normalizar, sinSolapar } from "./marcadores";
 import type { Deteccion, EstadoDeteccion } from "./types";
 
 export type Segmento = { inicio: number; fin: number; deteccion?: Deteccion };
 
-/** Parte el texto en tramos planos y tramos con detección; ignora detecciones solapadas. */
+/**
+ * Parte el texto en tramos planos y tramos con detección; ignora detecciones solapadas.
+ * Las descartadas solo ocupan huecos: si se descarta una carátula, se ven los nombres que contiene.
+ */
 export function construirSegmentos(texto: string, detecciones: Deteccion[]): Segmento[] {
+  const vigentes = sinSolapar(detecciones.filter((d) => d.estado !== "descartada"));
+  const descartadas = detecciones.filter(
+    (d) => d.estado === "descartada" && !vigentes.some((v) => d.inicio < v.fin && v.inicio < d.fin),
+  );
+  const visibles = [...vigentes, ...sinSolapar(descartadas)].sort((a, b) => a.inicio - b.inicio);
   const out: Segmento[] = [];
   let cursor = 0;
-  for (const d of [...detecciones].sort((a, b) => a.inicio - b.inicio)) {
-    if (d.inicio < cursor) continue;
+  for (const d of visibles) {
     if (d.inicio > cursor) out.push({ inicio: cursor, fin: d.inicio });
     out.push({ inicio: d.inicio, fin: d.fin, deteccion: d });
     cursor = d.fin;

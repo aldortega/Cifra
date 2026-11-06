@@ -1,2 +1,12 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+
+/* Tailwind 4 deja los botones con el cursor por defecto: se recupera la manito. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled),
+  label:has(input[type="checkbox"]) {
+    cursor: pointer;
+  }
+}
