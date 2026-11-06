@@ -98,3 +98,28 @@ def test_the_api_exposes_progress_while_processing(client: TestClient, store: Jo
         "hechos": 2,
         "total": 5,
     }
+
+
+def test_a_job_cancelled_while_processing_stops_without_retrying(store: JobStore) -> None:
+    job_id = new_job(store)
+
+    class CancellingExtractor(FakeExtractor):
+        def extract(self, text, on_progress=None):
+            self.calls += 1
+            on_progress(0, 3)
+            store.remove(job_id)  # el usuario cancela a mitad del análisis
+            on_progress(1, 3)
+            raise AssertionError("debió detenerse al informar el avance")
+
+    extractor = CancellingExtractor()
+    process_job(store, job_id, extractor, sleep=lambda _s: None)
+    assert store.load(job_id) is None
+    assert extractor.calls == 1
+
+
+def test_a_job_cancelled_before_processing_is_skipped(store: JobStore) -> None:
+    job_id = new_job(store)
+    store.remove(job_id)
+    extractor = FakeExtractor()
+    process_job(store, job_id, extractor, sleep=lambda _s: None)
+    assert extractor.calls == 0

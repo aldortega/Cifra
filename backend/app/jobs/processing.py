@@ -37,6 +37,10 @@ def _to_records(detections: list[Detection], active: set[str], text_len: int) ->
     ]
 
 
+class JobCancelled(Exception):
+    """El trabajo se canceló o venció a mitad del análisis: hay que dejar de procesarlo."""
+
+
 def _is_gone(store: JobStore, job_id: str) -> bool:
     """El trabajo venció (o se borró) mientras se procesaba: no hay que resucitarlo."""
     current = store.load(job_id)
@@ -51,21 +55,23 @@ def process_job(
 ) -> None:
     """Extrae el texto, detecta datos sensibles y deja el trabajo en revisión o fallido."""
     record = store.load(job_id)
-    if record is None:
+    if record is None:  # cancelado antes de empezar
         return
     active = set(record["categorias"]) | ALWAYS_ACTIVE
     try:
         original = store.read_original(job_id, record["extension"])
         text, layout = extract_document(original, record["extension"])
+    except FileNotFoundError:  # cancelado justo antes de leer el original
+        return
     except RejectedDocumentError as error:
         record.update(estado="fallido", progreso=None, error=str(error))
         store.save(job_id, record)
         return
 
     def report(done: int, total: int) -> None:
-        """Guarda el avance real (fragmentos analizados) salvo que el trabajo ya no siga vivo."""
+        """Guarda el avance real (fragmentos analizados); corta el análisis si ya no sigue vivo."""
         if _is_gone(store, job_id):
-            return
+            raise JobCancelled
         record["progreso"] = {"etapa": "analizando", "hechos": done, "total": total}
         store.save(job_id, record)
 
@@ -73,6 +79,8 @@ def process_job(
     for attempt in range(ATTEMPTS):
         try:
             detections = extractor.extract(text, on_progress=report)
+        except JobCancelled:
+            return
         except Exception as error:
             last_error = str(error)
             if attempt < ATTEMPTS - 1:
